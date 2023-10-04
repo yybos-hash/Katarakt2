@@ -114,7 +114,7 @@ public class MessageServer {
 
         String temp;
         String bucket = "";
-        StringBuilder rawMessage;
+        StringBuilder rawMessage = new StringBuilder();
 
         boolean receiving;
 
@@ -124,14 +124,15 @@ public class MessageServer {
                 do {
                     receiving = true;
 
-                    rawMessage = new StringBuilder();
-                    rawMessage.append(bucket);
-                    // adds the bucket if there is anything in it
+                    if (!bucket.isEmpty()) {
+                        rawMessage = new StringBuilder(bucket.substring(0, bucket.indexOf('\0')));
+                        bucket = bucket.substring(bucket.indexOf('\0') + 1);
+
+                        break;
+                    }
 
                     packet = thisClient.in.read(Constants.buffer);
-
                     temp = new String(Constants.buffer, 0, packet, Constants.encoding);
-                    rawMessage.append(temp);
 
                     // checks for the \0 in the temp
                     for (int i = 0; i < temp.length(); i++) {
@@ -139,11 +140,16 @@ public class MessageServer {
                             receiving = false;
 
                             // bucket will store the beginning of the other message ( ...}/0{... )
-                            bucket = temp.substring(i);
+                            bucket = temp.substring(i + 1);
+                            rawMessage = new StringBuilder(temp.substring(0, i));
+
                             break;
                         }
                     }
                 } while (receiving);
+
+                if (rawMessage.isEmpty())
+                    continue;
 
                 // remove null character
                 rawMessage = new StringBuilder(rawMessage.toString().replace("\0", ""));

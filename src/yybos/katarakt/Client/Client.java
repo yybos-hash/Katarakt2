@@ -45,8 +45,6 @@ public class Client {
                             break;
                         }
 
-                        // gotta find a way to seek through the entire rawMessage, and then break the do while when finding a null character
-
                         packet = thisClient.in.read(Constants.buffer);
                         temp = new String(Constants.buffer, 0, packet, Constants.encoding);
 
