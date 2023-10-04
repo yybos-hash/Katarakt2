@@ -13,6 +13,7 @@ public class DBConnection {
     private final String password = "";
     private final int logLimit = 50;
 
+
     private Connection connection;
 
     public int getInt (String query) {

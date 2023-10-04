@@ -28,7 +28,7 @@ public class Client {
 
             String temp;
             String bucket = "";
-            StringBuilder rawMessage;
+            StringBuilder rawMessage = new StringBuilder();
 
             boolean receiving;
 
@@ -38,20 +38,17 @@ public class Client {
                     do {
                         receiving = true;
 
-                        ConsoleLog.info("Bucket111: " + bucket);
+                        if (!bucket.isEmpty()) {
+                            rawMessage = new StringBuilder(bucket.substring(0, bucket.indexOf('\0')));
+                            bucket = bucket.substring(bucket.indexOf('\0') + 1);
 
-                        rawMessage = new StringBuilder();
-                        if (!bucket.isBlank())
-                            rawMessage.append(bucket, 0, bucket.indexOf('\0'));
-                        // adds the bucket if there is anything in it
-                        ConsoleLog.info("rawMessage222: " + rawMessage);
+                            break;
+                        }
 
                         // gotta find a way to seek through the entire rawMessage, and then break the do while when finding a null character
 
                         packet = thisClient.in.read(Constants.buffer);
-
                         temp = new String(Constants.buffer, 0, packet, Constants.encoding);
-                        rawMessage.append(temp);
 
                         // checks for the \0 in the temp
                         for (int i = 0; i < temp.length(); i++) {
@@ -59,19 +56,13 @@ public class Client {
                                 receiving = false;
 
                                 // bucket will store the beginning of the other message ( ...}/0{... )
-                                if (temp.length() < i + 1)
-                                    bucket = "";
-                                else
-                                    bucket = temp.substring(i + 1);
-
-                                ConsoleLog.info("bucket inside: " + bucket);
+                                bucket = temp.substring(i + 1);
+                                rawMessage = new StringBuilder(temp.substring(0, i));
 
                                 break;
                             }
                         }
                     } while (receiving);
-
-                    ConsoleLog.info("rawMessage out: " + rawMessage);
 
                     // parse raw message
                     message = Message.fromString(rawMessage.toString().replace("\0", ""));

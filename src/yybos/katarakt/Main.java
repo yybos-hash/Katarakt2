@@ -27,7 +27,7 @@ public class Main {
         Thread server = new Thread(msgServer::run);
         server.start();
 
-        Thread clientT = new Thread(() -> client.connect("192.168.0.111", 4080));
+        Thread clientT = new Thread(() -> client.connect(Constants.server, 4080));
         clientT.start();
     }
 }
