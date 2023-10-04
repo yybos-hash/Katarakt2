@@ -38,12 +38,15 @@ public class Client {
                     do {
                         receiving = true;
 
+                        ConsoleLog.info("Bucket111: " + bucket);
+
                         rawMessage = new StringBuilder();
-                        rawMessage.append(bucket);
+                        if (!bucket.isBlank())
+                            rawMessage.append(bucket, 0, bucket.indexOf('\0'));
                         // adds the bucket if there is anything in it
+                        ConsoleLog.info("rawMessage222: " + rawMessage);
 
                         // gotta find a way to seek through the entire rawMessage, and then break the do while when finding a null character
-                        //
 
                         packet = thisClient.in.read(Constants.buffer);
 
@@ -61,14 +64,14 @@ public class Client {
                                 else
                                     bucket = temp.substring(i + 1);
 
-                                ConsoleLog.info("bucket: " + bucket);
+                                ConsoleLog.info("bucket inside: " + bucket);
 
                                 break;
                             }
                         }
                     } while (receiving);
 
-                    ConsoleLog.info("b4: " + rawMessage);
+                    ConsoleLog.info("rawMessage out: " + rawMessage);
 
                     // parse raw message
                     message = Message.fromString(rawMessage.toString().replace("\0", ""));
