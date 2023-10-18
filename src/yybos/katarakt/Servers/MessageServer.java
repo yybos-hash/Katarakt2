@@ -108,6 +108,8 @@ public class MessageServer {
         for (Message message : messages)
             thisClient.sendMessage(message);
 
+        thisClient.sendMessage(Message.toMessage(Message.Type.Message, "cu", 1, 2));
+
         //
         int packet;
         Message message;
@@ -148,7 +150,7 @@ public class MessageServer {
                     }
                 } while (receiving);
 
-                if (rawMessage.isEmpty())
+                if (rawMessage.length() == 0)
                     continue;
 
                 // remove null character

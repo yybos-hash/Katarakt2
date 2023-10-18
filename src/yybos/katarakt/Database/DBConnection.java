@@ -8,9 +8,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DBConnection {
-    private final String jdbcUrl = "jdbc:mysql://localhost:3306/katarakt2";
-    private final String username = "root";
-    private final String password = "";
+    private final String jdbcUrl = "jdbc:mysql://localhost:3306/katarakt2"; // jdbc:mysql://141.144.226.199:52000/blackness-db Kitsune
+    private final String username = "root"; // blackness kitsune
+    private final String password = ""; // 062GibRGp+2a kitsune
     private final int logLimit = 50;
 
 
