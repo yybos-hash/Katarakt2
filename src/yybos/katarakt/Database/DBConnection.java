@@ -73,7 +73,7 @@ public class DBConnection {
         List<Message> messages = new ArrayList<>();
 
         try {
-            String sql = "SELECT messages.id, messages.fk_type, messages.message, messages.dat, messages.fk_user, users.nm FROM messages INNER JOIN users ON messages.fk_user = users.id WHERE messages.fk_chat = ? ORDER BY messages.dat DESC LIMIT ?;";
+            String sql = "SELECT messages.id, messages.fk_type, messages.message, messages.dat, messages.fk_user, users.nm FROM messages INNER JOIN users ON messages.fk_user = users.id WHERE messages.fk_chat = ? ORDER BY messages.dat LIMIT ?;";
 
             // prepare the sql and shit
             PreparedStatement preparedStatement = this.connection.prepareStatement(sql);

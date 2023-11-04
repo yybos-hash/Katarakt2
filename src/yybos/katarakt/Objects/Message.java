@@ -80,6 +80,7 @@ public class Message {
         from.chat = chat;
         from.user = user;
         from.userId = userId;
+        from.dt = new Date(System.currentTimeMillis());
 
         return from;
     }

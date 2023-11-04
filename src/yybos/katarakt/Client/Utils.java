@@ -1,6 +1,8 @@
 package yybos.katarakt.Client;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonSerializer;
 import yybos.katarakt.ConsoleLog;
 import yybos.katarakt.Constants;
 import yybos.katarakt.Objects.Message;
@@ -9,6 +11,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.sql.Date;
+import java.text.SimpleDateFormat;
 
 public class Utils {
     public Socket client;
@@ -32,7 +36,15 @@ public class Utils {
         if (message == null)
             return;
 
-        Gson messageParser = new Gson();
+        //
+            SimpleDateFormat customDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+            GsonBuilder gsonBuilder = new GsonBuilder();
+            gsonBuilder.registerTypeAdapter(Date.class, (JsonSerializer<Date>) (src, typeOfSrc, context) -> context.serialize(customDateFormat.format(src)));
+        //  Basically when gson formats a Date in the sql.Date format it changes the format, so this keeps the it as it should
+
+        Gson messageParser = gsonBuilder.create();
+
         String text = messageParser.toJson(message) + '\0';
 
         try {

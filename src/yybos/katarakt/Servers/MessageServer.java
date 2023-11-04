@@ -97,6 +97,8 @@ public class MessageServer {
             }
         }
         catch (Exception e) {
+            thisClient.close();
+
             ConsoleLog.exception("Exception in client: " + client.getInetAddress());
             ConsoleLog.error(e.getMessage());
             ConsoleLog.info("Returning");
@@ -104,11 +106,8 @@ public class MessageServer {
         }
 
         // get the log messages and send them
-        List<Message> messages = dbConnection.getLog(1);
-        for (Message message : messages)
+        for (Message message : dbConnection.getLog(1))
             thisClient.sendMessage(message);
-
-        thisClient.sendMessage(Message.toMessage(Message.Type.Message, "cu", 1, "Server", 1));
 
         //
         int packet;
@@ -171,13 +170,12 @@ public class MessageServer {
                     ConsoleLog.info("Command");
                 }
 
-                dbConnection.pushMessage(message);
+//                dbConnection.pushMessage(message);
             }
         }
         catch (Exception e) {
             thisClient.close();
 
-            e.printStackTrace();
             ConsoleLog.exception("Exception in client: " + client.getInetAddress().toString());
             ConsoleLog.error(e.getMessage());
             ConsoleLog.info("Returning");
