@@ -126,6 +126,7 @@ public class MessageServer {
                 do {
                     receiving = true;
 
+                    // rawMessage will be the parsed message, and the bucket will be the next message. Break the loop and parse :Sex_penis:
                     if (!bucket.isEmpty()) {
                         rawMessage = new StringBuilder(bucket.substring(0, bucket.indexOf('\0')));
                         bucket = bucket.substring(bucket.indexOf('\0') + 1);
@@ -134,7 +135,12 @@ public class MessageServer {
                     }
 
                     packet = thisClient.in.read(Constants.buffer);
+                    if (packet <= 0)
+                        continue;
+
                     temp = new String(Constants.buffer, 0, packet, Constants.encoding);
+
+                    System.out.println("b: " + temp);
 
                     // checks for the \0 in the temp
                     for (int i = 0; i < temp.length(); i++) {
@@ -173,6 +179,7 @@ public class MessageServer {
         catch (Exception e) {
             thisClient.close();
 
+            e.printStackTrace();
             ConsoleLog.exception("Exception in client: " + client.getInetAddress().toString());
             ConsoleLog.error(e.getMessage());
             ConsoleLog.info("Returning");
