@@ -55,7 +55,7 @@ public class DBConnection {
             preparedStatement.setString(1, message.getMessage());
             preparedStatement.setInt(2, message.getType().ordinal());
             preparedStatement.setInt(3, message.getChat());
-            preparedStatement.setInt(4, message.getUser());
+            preparedStatement.setInt(4, message.getUserId());
 
             // Execute the INSERT
             preparedStatement.executeUpdate();
@@ -73,7 +73,7 @@ public class DBConnection {
         List<Message> messages = new ArrayList<>();
 
         try {
-            String sql = "SELECT * FROM messages WHERE fk_chat=? ORDER BY dat DESC LIMIT ?;";
+            String sql = "SELECT messages.id, messages.fk_type, messages.message, messages.dat, messages.fk_user, users.nm FROM messages INNER JOIN users ON messages.fk_user = users.id WHERE messages.fk_chat = ? ORDER BY messages.dat DESC LIMIT ?;";
 
             // prepare the sql and shit
             PreparedStatement preparedStatement = this.connection.prepareStatement(sql);
@@ -86,15 +86,17 @@ public class DBConnection {
                 int type = resultSet.getInt("fk_type");
                 String text = resultSet.getString("message");
                 Date date = resultSet.getDate("dat");
-//                int chat = resultSet.getInt("fk_chat");
-                int user = resultSet.getInt("fk_user");
+                String user = resultSet.getString("nm");
+                int userId = resultSet.getInt("fk_user");
 
                 Message message = new Message();
                 message.setId(id);
                 message.setType(type);
                 message.setMessage(text);
                 message.setDate(date);
+                message.setChat(chat);
                 message.setUser(user);
+                message.setUserId(userId);
 
                 messages.add(message);
             }

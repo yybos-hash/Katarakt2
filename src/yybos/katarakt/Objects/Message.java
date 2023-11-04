@@ -21,7 +21,8 @@ public class Message {
     private int size;
     private Date dt;
     private int chat;
-    private int user;
+    private String user;
+    private int userId;
 
     public int getId () {
         return id;
@@ -41,8 +42,11 @@ public class Message {
     public int getChat () {
         return chat;
     }
-    public int getUser () {
+    public String getUser () {
         return user;
+    }
+    public int getUserId() {
+        return userId;
     }
 
     public void setId(int id) {
@@ -61,17 +65,21 @@ public class Message {
     public void setChat(int chat) {
         this.chat = chat;
     }
-    public void setUser(int user) {
+    public void setUser(String user) {
         this.user = user;
     }
+    public void setUserId(int userId) {
+        this.userId = userId;
+    }
 
-    public static Message toMessage (Message.Type type, String message, int chat, int user) {
+    public static Message toMessage (Message.Type type, String message, int chat, String user, int userId) {
         Message from = new Message();
         from.type = type;
         from.message = message;
         from.size = message.length();
         from.chat = chat;
         from.user = user;
+        from.userId = userId;
 
         return from;
     }

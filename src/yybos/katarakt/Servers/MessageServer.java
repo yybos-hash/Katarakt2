@@ -108,7 +108,7 @@ public class MessageServer {
         for (Message message : messages)
             thisClient.sendMessage(message);
 
-        thisClient.sendMessage(Message.toMessage(Message.Type.Message, "cu", 1, 2));
+        thisClient.sendMessage(Message.toMessage(Message.Type.Message, "cu", 1, "Server", 1));
 
         //
         int packet;
@@ -139,8 +139,6 @@ public class MessageServer {
                         continue;
 
                     temp = new String(Constants.buffer, 0, packet, Constants.encoding);
-
-                    System.out.println("b: " + temp);
 
                     // checks for the \0 in the temp
                     for (int i = 0; i < temp.length(); i++) {
