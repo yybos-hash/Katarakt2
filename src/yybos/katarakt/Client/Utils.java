@@ -19,7 +19,6 @@ public class Utils {
     public OutputStream out;
     public InputStream in;
 
-
     public Utils (Socket client) {
         try {
             this.client = client;
@@ -80,16 +79,15 @@ public class Utils {
 
     public void close () {
         try {
+            in.close();
+            out.close();
+
             client.close();
             client.shutdownOutput();
             client.shutdownInput();
-
-            in.close();
-            out.close();
         }
         catch (Exception e) {
             ConsoleLog.warning(e.getMessage());
-            ConsoleLog.info("Returning");
         }
     }
 }

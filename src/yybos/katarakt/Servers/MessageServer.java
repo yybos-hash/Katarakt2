@@ -17,20 +17,21 @@ public class MessageServer {
     private final String server = Constants.server;
     private final int port = Constants.messagePort;
 
-    private final List<Socket> clients = new ArrayList<>();
+    private final List<Socket> messageClients = new ArrayList<>();
 
     private ServerSocket socket;
 
     public void run () {
-        waitConnections();
+        Thread server = new Thread(this::waitMessageConnections);
+        server.start();
     }
 
-    private void waitConnections () {
+    private void waitMessageConnections() {
         try {
             InetAddress InetHostname = InetAddress.getByName(server);
 
             ConsoleLog.info("Binding to address " + server);
-            ConsoleLog.info("Using ports [" + Constants.messagePort + " - " + (Constants.messagePort + 3) + ']');
+            ConsoleLog.info("Using ports [" + Constants.messagePort + " - " + Constants.logPort + ']');
 
             // bind main server socket
             socket = new ServerSocket();
@@ -48,13 +49,9 @@ public class MessageServer {
                 while (true) {
                     client = socket.accept();
 
-                    // copy client to effectively final temporary variable
-                    Socket finalClient = client;
-                    new Thread(() -> client(finalClient)).start();
-
                     // check to see if the ip is already connected. if it is, then disconnect and remove it from clients
                     clientAddress = client.getInetAddress().getHostAddress();
-                    _clients = new ArrayList<>(clients);
+                    _clients = new ArrayList<>(messageClients);
                     for (Socket _client : _clients) {
                         if (_client.getInetAddress().getHostAddress().equals(clientAddress)) {
                             if (!client.isClosed()) {
@@ -62,10 +59,16 @@ public class MessageServer {
                                 _client.shutdownOutput();
                                 _client.close();
                             }
-                            clients.remove(_client);
+
+                            ConsoleLog.info(_client.getInetAddress().toString() + " has been kicked due to already existing connection");
+                            messageClients.remove(_client);
                         }
                     }
-                    clients.add(client);
+                    messageClients.add(client);
+
+                    Socket finalClient = client;
+                    Thread clientThread = new Thread(() -> client(finalClient));
+                    clientThread.start();
                 }
             }
             catch (Exception e) {
@@ -79,7 +82,7 @@ public class MessageServer {
         }
     }
 
-    private void client (Socket client) {
+    private void client(Socket client) {
         Utils thisClient = new Utils(client);
         DBConnection dbConnection = new DBConnection();
 
@@ -108,8 +111,8 @@ public class MessageServer {
         // get the log messages and send them
         for (Message message : dbConnection.getLog(1))
             thisClient.sendMessage(message);
-
         //
+
         int packet;
         Message message;
 
@@ -125,7 +128,7 @@ public class MessageServer {
                 do {
                     receiving = true;
 
-                    // rawMessage will be the parsed message, and the bucket will be the next message. Break the loop and parse :Sex_penis:
+                    // rawMessage will be the parsed message, and the bucket will be the next message. Break the loop and parse :Sex_Penis:
                     if (!bucket.isEmpty()) {
                         rawMessage = new StringBuilder(bucket.substring(0, bucket.indexOf('\0')));
                         bucket = bucket.substring(bucket.indexOf('\0') + 1);
@@ -134,8 +137,8 @@ public class MessageServer {
                     }
 
                     packet = thisClient.in.read(Constants.buffer);
-                    if (packet <= 0)
-                        continue;
+                    if (packet <= 0) // if the packet bytes count is less or equal to 0 then the client has disconnected, which means that the thread should be terminated
+                        return;
 
                     temp = new String(Constants.buffer, 0, packet, Constants.encoding);
 
@@ -176,9 +179,8 @@ public class MessageServer {
         catch (Exception e) {
             thisClient.close();
 
-            ConsoleLog.exception("Exception in client: " + client.getInetAddress().toString());
+            ConsoleLog.exception("Client " + client.getInetAddress().toString() + " disconnected");
             ConsoleLog.error(e.getMessage());
-            ConsoleLog.info("Returning");
         }
     }
 }

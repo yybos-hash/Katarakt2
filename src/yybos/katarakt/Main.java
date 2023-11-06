@@ -24,8 +24,7 @@ public class Main {
         MessageServer msgServer = new MessageServer();
         Client client = new Client();
 
-        Thread server = new Thread(msgServer::run);
-        server.start();
+        msgServer.run();
 
 //        Thread clientT = new Thread(() -> client.connect(Constants.server, 4080));
 //        clientT.start();
