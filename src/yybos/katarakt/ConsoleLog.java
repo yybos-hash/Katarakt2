@@ -19,7 +19,7 @@ public class ConsoleLog {
 
         String template = "[" + fileName + '.' + methodName + " - WARNING]";
 
-        System.out.println(template + " ".repeat(46 - template.length()) + message);
+        System.out.println(template + " ".repeat(48 - template.length()) + message);
     }
     public static void info (String message) {
         // Get the stack trace
@@ -39,7 +39,7 @@ public class ConsoleLog {
 
         String template = "[" + fileName + '.' + methodName + " - INFO]";
 
-        System.out.println(template + " ".repeat(46 - template.length()) + message);
+        System.out.println(template + " ".repeat(48 - template.length()) + message);
     }
     public static void error (String message) {
         // Get the stack trace
@@ -59,7 +59,7 @@ public class ConsoleLog {
 
         String template = "[" + fileName + '.' + methodName + " - ERROR]";
 
-        System.out.println(template + " ".repeat(46 - template.length()) + message);
+        System.out.println(template + " ".repeat(48 - template.length()) + message);
     }
     public static void exception (String message) {
         // Get the stack trace
@@ -79,6 +79,6 @@ public class ConsoleLog {
 
         String template = "[" + fileName + '.' + methodName + " - EXCEPTION]";
 
-        System.out.println(template + " ".repeat(46 - template.length()) + message);
+        System.out.println(template + " ".repeat(48 - template.length()) + message);
     }
 }

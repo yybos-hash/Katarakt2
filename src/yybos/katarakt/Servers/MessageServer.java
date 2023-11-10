@@ -6,6 +6,7 @@ import yybos.katarakt.Constants;
 import yybos.katarakt.Database.DBConnection;
 import yybos.katarakt.Objects.Message;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -173,7 +174,7 @@ public class MessageServer {
                     ConsoleLog.info("Command");
                 }
 
-//                dbConnection.pushMessage(message);
+                dbConnection.pushMessage(message);
             }
         }
         catch (Exception e) {

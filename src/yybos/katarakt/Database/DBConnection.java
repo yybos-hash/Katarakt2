@@ -2,6 +2,7 @@ package yybos.katarakt.Database;
 
 import yybos.katarakt.ConsoleLog;
 import yybos.katarakt.Objects.Message;
+import yybos.katarakt.Objects.User;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -11,38 +12,9 @@ public class DBConnection {
     private final String jdbcUrl = "jdbc:mysql://localhost:3306/katarakt2"; // jdbc:mysql://141.144.226.199:52000/blackness-db Kitsune
     private final String username = "root"; // blackness kitsune
     private final String password = ""; // 062GibRGp+2a kitsune
-    private final int logLimit = 50;
-
+    private final int logLimit = 50; // max number of messages that can be retrieved at once
 
     private Connection connection;
-
-    public int getInt (String query) {
-        this.connect();
-
-        try {
-            Statement statement = connection.createStatement();
-            ResultSet resultSet = statement.executeQuery(query);
-
-            while (resultSet.next()) {
-                // Process each row of data
-                int id = resultSet.getInt("id");
-                String name = resultSet.getString("name");
-                // ...process other columns
-            }
-
-            resultSet.close();
-            statement.close();
-
-            this.close();
-
-            return 1;
-        } catch (SQLException e) {
-            ConsoleLog.error(e.getMessage());
-            ConsoleLog.info("Returning");
-
-            return -1;
-        }
-    }
 
     public void pushMessage (Message message) {
         this.connect();
@@ -105,11 +77,59 @@ public class DBConnection {
             return messages;
         } catch (SQLException e) {
             ConsoleLog.error(e.getMessage());
-            ConsoleLog.info("Returning");
 
             this.close();
             return null;
         }
+    }
+
+    public User getUser (int id) {
+        this.connect();
+        User user = new User();
+
+        try {
+            String sql = "SELECT nm, pass FROM users WHERE id = ?";
+
+            // prepare the sql and shit
+            PreparedStatement preparedStatement = this.connection.prepareStatement(sql);
+            preparedStatement.setInt(1, id);
+
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            user.setId(id);
+            user.setName(resultSet.getString("nm"));
+            user.setPass(resultSet.getString("pass"));
+        }
+        catch (Exception e) {
+            ConsoleLog.error(e.getMessage());
+        }
+
+        this.close();
+        return user;
+    }
+    public User getUser (String username) {
+        this.connect();
+        User user = new User();
+
+        try {
+            String sql = "SELECT id, pass FROM users WHERE nm = ?";
+
+            // prepare the sql and shit
+            PreparedStatement preparedStatement = this.connection.prepareStatement(sql);
+            preparedStatement.setString(1, username);
+
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            user.setId(resultSet.getInt("id"));
+            user.setName(username);
+            user.setPass(resultSet.getString("pass"));
+        }
+        catch (Exception e) {
+            ConsoleLog.error(e.getMessage());
+        }
+
+        this.close();
+        return user;
     }
 
     private void connect () {
@@ -118,7 +138,6 @@ public class DBConnection {
         }
         catch (Exception e) {
             ConsoleLog.error(e.getMessage());
-            ConsoleLog.info("Returning");
         }
     }
     private void close () {
@@ -128,7 +147,6 @@ public class DBConnection {
             }
         } catch (SQLException e) {
             ConsoleLog.error(e.getMessage());
-            ConsoleLog.info("Returning");
         }
     }
 }
