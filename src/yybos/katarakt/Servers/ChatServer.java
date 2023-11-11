@@ -8,16 +8,14 @@ import yybos.katarakt.Objects.Chat;
 import yybos.katarakt.Objects.Message;
 import yybos.katarakt.Objects.User;
 
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
-public class MessageServer {
+public class ChatServer {
     private final String server = Constants.server;
     private final int port = Constants.messagePort;
 
@@ -34,8 +32,8 @@ public class MessageServer {
         try {
             InetAddress InetHostname = InetAddress.getByName(server);
 
-            ConsoleLog.info("Binding Message Server to address " + server);
-            ConsoleLog.info("Using ports [" + Constants.messagePort + ']');
+            ConsoleLog.info("Binding Chat Server to address " + server);
+            ConsoleLog.info("Using ports [" + Constants.chatPort + ']');
 
             // bind main server socket
             socket = new ServerSocket();

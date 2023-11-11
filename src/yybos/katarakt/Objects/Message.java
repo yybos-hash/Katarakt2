@@ -93,7 +93,8 @@ public class Message {
     public enum Type {
         Message(0),
         Command(1),
-        Version(2);
+        Version(2),
+        Chat(3);
 
         private final int value;
 

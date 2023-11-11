@@ -1,6 +1,7 @@
 package yybos.katarakt.Database;
 
 import yybos.katarakt.ConsoleLog;
+import yybos.katarakt.Objects.Chat;
 import yybos.katarakt.Objects.Message;
 import yybos.katarakt.Objects.User;
 
@@ -119,6 +120,8 @@ public class DBConnection {
             preparedStatement.setString(1, username);
 
             ResultSet resultSet = preparedStatement.executeQuery();
+            if (!resultSet.next())
+                return new User();
 
             user.setId(resultSet.getInt("id"));
             user.setName(username);
@@ -130,6 +133,40 @@ public class DBConnection {
 
         this.close();
         return user;
+    }
+
+    public List<Chat> getChats (User user) {
+        if (user.getId() == 0)
+            return null;
+
+        this.connect();
+        List<Chat> chats = new ArrayList<>();
+        Chat chat;
+
+        try {
+            String sql = "SELECT id, nm, dt FROM chats WHERE fk_user = ?";
+
+            // prepare the sql and shit
+            PreparedStatement preparedStatement = this.connection.prepareStatement(sql);
+            preparedStatement.setInt(1, user.getId());
+
+            ResultSet resultSet = preparedStatement.executeQuery();
+            while (resultSet.next()) {
+                chat = new Chat();
+
+                chat.setId(resultSet.getInt("id"));
+                chat.setNm(resultSet.getString("nm"));
+                chat.setDt(resultSet.getDate("dt"));
+
+                chats.add(chat);
+            }
+        }
+        catch (Exception e) {
+            ConsoleLog.error(e.getMessage());
+        }
+
+        this.close();
+        return chats;
     }
 
     private void connect () {

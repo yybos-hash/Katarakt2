@@ -5,7 +5,9 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSerializer;
 import yybos.katarakt.ConsoleLog;
 import yybos.katarakt.Constants;
+import yybos.katarakt.Objects.Chat;
 import yybos.katarakt.Objects.Message;
+import yybos.katarakt.Objects.User;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,6 +33,32 @@ public class Utils {
         }
     }
 
+    public void sendChat (Chat chat) {
+        if (chat == null)
+            return;
+
+        //
+        SimpleDateFormat customDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+        GsonBuilder gsonBuilder = new GsonBuilder();
+        gsonBuilder.registerTypeAdapter(Date.class, (JsonSerializer<Date>) (src, typeOfSrc, context) -> context.serialize(customDateFormat.format(src)));
+        //  Basically when gson formats a Date in the sql.Date format it changes the format, so this keeps the it as it should
+
+        Gson messageParser = gsonBuilder.create();
+
+        String text = messageParser.toJson(chat) + '\0';
+
+        try {
+            send(text);
+        }
+        catch (Exception e) {
+            ConsoleLog.error(e.getMessage());
+            ConsoleLog.info("Returning");
+        }
+    }
+    public void sendUser (User user) {
+
+    }
     public void sendMessage (Message message) {
         if (message == null)
             return;
