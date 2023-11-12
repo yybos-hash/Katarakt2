@@ -1,6 +1,8 @@
 package yybos.katarakt;
 
 import yybos.katarakt.Client.Client;
+import yybos.katarakt.Objects.Chat;
+import yybos.katarakt.Servers.ChatServer;
 import yybos.katarakt.Servers.MessageServer;
 
 public class Main {
@@ -22,11 +24,9 @@ public class Main {
         System.out.println("");
 
         MessageServer msgServer = new MessageServer();
-        Client client = new Client();
+        ChatServer chatServer = new ChatServer();
 
         msgServer.run();
-
-//        Thread clientT = new Thread(() -> client.connect(Constants.server, 4080));
-//        clientT.start();
+        chatServer.run();
     }
 }

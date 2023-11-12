@@ -5,7 +5,6 @@ import java.sql.Date;
 public class Chat {
     private int id;
     private int user;
-    private Date dt;
     private String nm;
 
     public int getId () {
@@ -14,10 +13,7 @@ public class Chat {
     public int getUser () {
         return this.user;
     }
-    public Date getDate () {
-        return this.dt;
-    }
-    public String getNm () {
+    public String getName() {
         return this.nm;
     }
 
@@ -27,10 +23,16 @@ public class Chat {
     public void setUser (int id) {
         this.user = id;
     }
-    public void setDt (Date date) {
-        this.dt = date;
-    }
-    public void setNm (String name) {
+    public void setName(String name) {
         this.nm = name;
+    }
+
+    public static Chat toChat (int id, int user, String name) {
+        Chat chat = new Chat();
+        chat.setId(id);
+        chat.setUser(user);
+        chat.setName(name);
+
+        return chat;
     }
 }

@@ -11,6 +11,6 @@ public class Constants {
     public static final int mediaPort = messagePort + 1;
     public static final int chatPort = messagePort + 2;
 
-    public static byte[] buffer = new byte[4096];
+    public static byte[] buffer = new byte[1024];
     public static Charset encoding = StandardCharsets.UTF_8;
 }

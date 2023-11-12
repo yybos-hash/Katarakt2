@@ -33,8 +33,23 @@ public class Utils {
         }
     }
 
-    public void sendChat (Chat chat) {
-        if (chat == null)
+    public String serializeObject (Object obj) {
+        if (obj == null)
+            return "";
+
+        //
+        SimpleDateFormat customDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+        GsonBuilder gsonBuilder = new GsonBuilder();
+        gsonBuilder.registerTypeAdapter(Date.class, (JsonSerializer<Date>) (src, typeOfSrc, context) -> context.serialize(customDateFormat.format(src)));
+        //  Basically when gson formats a Date in the sql.Date format it changes the format, so this keeps the it as it should
+
+        Gson objParser = gsonBuilder.create();
+
+        return objParser.toJson(obj);
+    }
+    public void sendObject (Object obj) {
+        if (obj == null)
             return;
 
         //
@@ -44,35 +59,9 @@ public class Utils {
         gsonBuilder.registerTypeAdapter(Date.class, (JsonSerializer<Date>) (src, typeOfSrc, context) -> context.serialize(customDateFormat.format(src)));
         //  Basically when gson formats a Date in the sql.Date format it changes the format, so this keeps the it as it should
 
-        Gson messageParser = gsonBuilder.create();
+        Gson objParser = gsonBuilder.create();
 
-        String text = messageParser.toJson(chat) + '\0';
-
-        try {
-            send(text);
-        }
-        catch (Exception e) {
-            ConsoleLog.error(e.getMessage());
-            ConsoleLog.info("Returning");
-        }
-    }
-    public void sendUser (User user) {
-
-    }
-    public void sendMessage (Message message) {
-        if (message == null)
-            return;
-
-        //
-            SimpleDateFormat customDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-
-            GsonBuilder gsonBuilder = new GsonBuilder();
-            gsonBuilder.registerTypeAdapter(Date.class, (JsonSerializer<Date>) (src, typeOfSrc, context) -> context.serialize(customDateFormat.format(src)));
-        //  Basically when gson formats a Date in the sql.Date format it changes the format, so this keeps the it as it should
-
-        Gson messageParser = gsonBuilder.create();
-
-        String text = messageParser.toJson(message) + '\0';
+        String text = objParser.toJson(obj) + '\0';
 
         try {
             send(text);
@@ -82,6 +71,7 @@ public class Utils {
             ConsoleLog.info("Returning");
         }
     }
+
     public void sendRawMessage(String message) {
         if (message == null)
             return;

@@ -10,6 +10,7 @@ package yybos.katarakt.Objects;
 */
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import java.sql.Date;
 
@@ -85,7 +86,11 @@ public class Message {
         return from;
     }
     public static Message fromString (String json) {
-        Gson messageParser = new Gson();
+        GsonBuilder gsonBuilder = new GsonBuilder();
+        gsonBuilder.registerTypeAdapter(Date.class, new ObjectDateDeserializer());
+        //  Basically when gson formats a Date in the sql.Date format it changes the format, so this keeps the it as it should
+
+        Gson messageParser = gsonBuilder.create();
 
         return messageParser.fromJson(json, Message.class);
     }

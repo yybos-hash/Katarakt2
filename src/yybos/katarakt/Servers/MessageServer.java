@@ -8,13 +8,11 @@ import yybos.katarakt.Objects.Chat;
 import yybos.katarakt.Objects.Message;
 import yybos.katarakt.Objects.User;
 
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class MessageServer {
@@ -26,22 +24,21 @@ public class MessageServer {
     private ServerSocket socket;
 
     public void run () {
-        Thread server = new Thread(this::waitMessageConnections);
+        Thread server = new Thread(this::waitConnections);
         server.start();
     }
 
-    private void waitMessageConnections() {
+    private void waitConnections() {
         try {
-            InetAddress InetHostname = InetAddress.getByName(server);
+            InetAddress InetHostname = InetAddress.getByName(this.server);
 
-            ConsoleLog.info("Binding Message Server to address " + server);
-            ConsoleLog.info("Using ports [" + Constants.messagePort + ']');
+            ConsoleLog.info("Binding Chat Server to address " + this.server + ". Using port [" + this.port + ']');
 
             // bind main server socket
-            socket = new ServerSocket();
-            socket.bind(new InetSocketAddress(InetHostname, port));
+            this.socket = new ServerSocket();
+            this.socket.bind(new InetSocketAddress(InetHostname, this.port));
 
-            if (!socket.isBound())
+            if (!this.socket.isBound())
                 return;
 
             // server client acceptance
@@ -51,11 +48,11 @@ public class MessageServer {
 
             try {
                 while (true) {
-                    client = socket.accept();
+                    client = this.socket.accept();
 
                     // check to see if the ip is already connected. if it is, then disconnect and remove it from clients
                     clientAddress = client.getInetAddress().getHostAddress();
-                    _clients = new ArrayList<>(messageClients);
+                    _clients = new ArrayList<>(this.messageClients);
                     for (Socket _client : _clients) {
                         if (_client.getInetAddress().getHostAddress().equals(clientAddress)) {
                             if (!client.isClosed()) {
@@ -65,10 +62,10 @@ public class MessageServer {
                             }
 
                             ConsoleLog.info(_client.getInetAddress().toString() + " has been kicked due to already existing connection");
-                            messageClients.remove(_client);
+                            this.messageClients.remove(_client);
                         }
                     }
-                    messageClients.add(client);
+                    this.messageClients.add(client);
 
                     Socket finalClient = client;
                     Thread clientThread = new Thread(() -> client(finalClient));
@@ -97,7 +94,7 @@ public class MessageServer {
             String credentials = new String(Constants.buffer, 0, thisClient.in.read(Constants.buffer), Constants.encoding);
 
             String version = credentials.split(";")[0];
-            String username = credentials.split(";")[1].trim(); // trim because when client's username and password are null it send only a " ". Also trim spaces from the username and password
+            String email = credentials.split(";")[1].trim(); // trim because when client's email and password are null it send only a " ". Also trim spaces from the email and password
             String password = credentials.split(";")[2].trim();
 
             // bla bla bla
@@ -107,9 +104,9 @@ public class MessageServer {
                 return;
             }
 
-            User dbUser = dbConnection.getUser(username);
+            User dbUser = dbConnection.getUser(email);
 
-            // if username doesnt exist
+            // if email doesnt exist
             if (dbUser.getName() == null) {
                 thisClient.close();
                 return;
@@ -121,26 +118,20 @@ public class MessageServer {
                 return;
             }
 
-            // get all the chats and send them
-            for (Chat chat : dbConnection.getChats(dbUser))
-                thisClient.sendMessage(Message.toMessage(Message.Type.Chat, chat.getNm() + ';' + chat.getId() + ';' + chat.getDate(), 0, "", 0));
-            //
-
-//            // get the log messages and send them
-//            for (Message message : dbConnection.getLog(1))
-//                thisClient.sendMessage(message);
-//            //
+            // send user information
+            String serializedUser = thisClient.serializeObject(dbUser);
+            thisClient.sendRawMessage(serializedUser + "\0".repeat(110 - serializedUser.length()));
         }
         catch (Exception e) {
             thisClient.close();
+
+            this.messageClients.remove(client);
 
             ConsoleLog.exception("Exception in client: " + client.getInetAddress());
             ConsoleLog.error(e.getMessage());
             ConsoleLog.info("Returning");
             return;
         }
-
-
 
         int packet;
         Message message;
@@ -149,20 +140,22 @@ public class MessageServer {
         String bucket = "";
         StringBuilder rawMessage = new StringBuilder();
 
-        boolean receiving;
-
         try {
             while (true) {
+                rawMessage = new StringBuilder();
+
                 // receive message
                 do {
-                    receiving = true;
-
-                    // rawMessage will be the parsed message, and the bucket will be the next message. Break the loop and parse :Sex_Penis:
+                    // rawMessage will be the parsed message and the bucket will be the next message. Break the loop and parse :Sex_penis:
                     if (!bucket.isEmpty()) {
-                        rawMessage = new StringBuilder(bucket.substring(0, bucket.indexOf('\0')));
-                        bucket = bucket.substring(bucket.indexOf('\0') + 1);
+                        if (bucket.contains("\0")) {
+                            rawMessage = new StringBuilder(bucket.substring(0, bucket.indexOf('\0') + 1));
+                            bucket = bucket.substring(bucket.indexOf('\0') + 1);
 
-                        break;
+                            break;
+                        }
+                        else
+                            rawMessage.append(bucket);
                     }
 
                     packet = thisClient.in.read(Constants.buffer);
@@ -171,22 +164,20 @@ public class MessageServer {
 
                     temp = new String(Constants.buffer, 0, packet, Constants.encoding);
 
+
                     // checks for the \0 in the temp
-                    for (int i = 0; i < temp.length(); i++) {
-                        if (temp.charAt(i) == '\0') {
-                            receiving = false;
+                    if (temp.contains("\0")) {
+                        int i = temp.indexOf('\0');
 
-                            // bucket will store the beginning of the other message ( ...}/0{... )
-                            bucket = temp.substring(i + 1);
-                            rawMessage = new StringBuilder(temp.substring(0, i));
+                        rawMessage.append(temp.substring(0, i + 1));
+                        bucket = temp.substring(i + 1);
 
-                            break;
-                        }
+                        break;
                     }
-                } while (receiving);
 
-                if (rawMessage.length() == 0)
-                    continue;
+                    // tem que ter
+                    rawMessage.append(temp);
+                } while (true);
 
                 // remove null character
                 rawMessage = new StringBuilder(rawMessage.toString().replace("\0", ""));
@@ -196,17 +187,25 @@ public class MessageServer {
 
                 // deal with message
                 if (message.getType() == Message.Type.Message) {
-                    ConsoleLog.info("Message");
+                    ConsoleLog.info(client.getInetAddress().toString() + ": " + message.getMessage());
+                    dbConnection.pushMessage(message);
                 }
                 else if (message.getType() == Message.Type.Command) {
-                    ConsoleLog.info("Command");
-                }
+                    switch (message.getMessage()) {
+                        case "getChatHistory": {
+                            for (Message chatMessage : dbConnection.getLog(message.getChat()))
+                                thisClient.sendObject(chatMessage);
 
-                dbConnection.pushMessage(message);
+                            break;
+                        }
+                    }
+                }
             }
         }
         catch (Exception e) {
             thisClient.close();
+
+            this.messageClients.remove(client);
 
             ConsoleLog.exception("Client " + client.getInetAddress().toString() + " disconnected");
             ConsoleLog.error(e.getMessage());

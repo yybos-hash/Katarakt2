@@ -108,23 +108,23 @@ public class DBConnection {
         this.close();
         return user;
     }
-    public User getUser (String username) {
+    public User getUser (String email) {
         this.connect();
         User user = new User();
 
         try {
-            String sql = "SELECT id, pass FROM users WHERE nm = ?";
+            String sql = "SELECT id, pass, nm FROM users WHERE email = ?";
 
             // prepare the sql and shit
             PreparedStatement preparedStatement = this.connection.prepareStatement(sql);
-            preparedStatement.setString(1, username);
+            preparedStatement.setString(1, email);
 
             ResultSet resultSet = preparedStatement.executeQuery();
             if (!resultSet.next())
                 return new User();
 
             user.setId(resultSet.getInt("id"));
-            user.setName(username);
+            user.setName(resultSet.getString("nm"));
             user.setPass(resultSet.getString("pass"));
         }
         catch (Exception e) {
@@ -144,7 +144,7 @@ public class DBConnection {
         Chat chat;
 
         try {
-            String sql = "SELECT id, nm, dt FROM chats WHERE fk_user = ?";
+            String sql = "SELECT id, nm FROM chats WHERE fk_user = ?";
 
             // prepare the sql and shit
             PreparedStatement preparedStatement = this.connection.prepareStatement(sql);
@@ -155,8 +155,8 @@ public class DBConnection {
                 chat = new Chat();
 
                 chat.setId(resultSet.getInt("id"));
-                chat.setNm(resultSet.getString("nm"));
-                chat.setDt(resultSet.getDate("dt"));
+                chat.setName(resultSet.getString("nm"));
+                chat.setUser(user.getId());
 
                 chats.add(chat);
             }
