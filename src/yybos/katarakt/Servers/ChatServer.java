@@ -1,5 +1,6 @@
 package yybos.katarakt.Servers;
 
+import yybos.katarakt.Client.Client;
 import yybos.katarakt.Client.Utils;
 import yybos.katarakt.ConsoleLog;
 import yybos.katarakt.Constants;
@@ -17,55 +18,23 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ChatServer {
-    private final String server = Constants.server;
-    private final int port = Constants.chatPort;
+    private Client client;
 
-    private ServerSocket socket;
+    public ChatServer (Client client) {
+        this.client = client;
+    }
 
     public void run () {
-        Thread server = new Thread(this::waitConnections);
+        Thread server = new Thread(() -> client(this.client));
         server.start();
     }
 
-    private void waitConnections() {
-        try {
-            InetAddress InetHostname = InetAddress.getByName(this.server);
-
-            // bind main server socket
-            this.socket = new ServerSocket();
-            this.socket.bind(new InetSocketAddress(InetHostname, this.port));
-
-            if (!this.socket.isBound())
-                return;
-
-            // server client acceptance
-            try {
-                Socket client;
-                while (true) {
-                    client = this.socket.accept();
-
-                    Socket finalClient = client;
-                    Thread clientThread = new Thread(() -> client(finalClient));
-                    clientThread.start();
-                }
-            }
-            catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        catch (Exception e) {
-                ConsoleLog.error(e.getMessage());
-                ConsoleLog.info("Exiting");
-        }
-    }
-
-    private void client(Socket client) {
-        Utils thisClient = new Utils(client);
+    private void client(Client client) {
         DBConnection dbConnection = new DBConnection();
 
         // test version of the client (side note: now the version will come with the username and password as well. "1.9.0;username;password")
         try {
-            String credentials = new String(Constants.buffer, 0, thisClient.in.read(Constants.buffer), Constants.encoding);
+            String credentials = client.thisClient.readString();
 
             String version = credentials.split(";")[0];
             String email = credentials.split(";")[1].trim(); // trim because when client's email and password are null it send only a " ". Also trim spaces from the email and password
@@ -73,40 +42,22 @@ public class ChatServer {
 
             // bla bla bla
             if (!version.equals(Constants.version)) {
-                thisClient.close();
+                client.thisClient.close();
                 return;
             }
 
-            User dbUser = dbConnection.getUser(email);
-
-            // if email doesnt exist
-            if (dbUser.getName() == null) {
-                thisClient.close();
-                return;
-            }
-
-            // if password doesnt match
-            if (!dbUser.getPass().equals(password)) {
-                thisClient.close();
-                return;
-            }
 
             // get all the chats and send them
-            for (Chat chat : dbConnection.getChats(dbUser))
-                thisClient.sendObject(chat);
+            for (Chat chat : dbConnection.getChats(client))
+                client.thisClient.sendObject(chat);
             //
 
-//            // get the log messages and send them
-//            for (Message message : dbConnection.getLog(1))
-//                thisClient.sendMessage(message);
-//            //
-
-            ConsoleLog.info("Done sending chats to client " + client.getInetAddress() + ". Closing");
+            ConsoleLog.info("Done sending chats to client " + client.ip + ". Closing");
         }
         catch (Exception e) {
-            thisClient.close();
+            client.thisClient.close();
 
-            ConsoleLog.exception("Exception in client: " + client.getInetAddress());
+            ConsoleLog.exception("Exception in client: " + client.ip);
             ConsoleLog.error(e.getMessage());
         }
     }

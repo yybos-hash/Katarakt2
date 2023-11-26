@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.sql.Date;
 import java.text.SimpleDateFormat;
 
@@ -93,6 +94,10 @@ public class Utils {
 
         out.write(message.getBytes(Constants.encoding));
         out.flush();
+    }
+
+    public String readString () throws IOException {
+        return new String(Constants.buffer, 0, this.in.read(Constants.buffer), Constants.encoding);
     }
 
     public void close () {

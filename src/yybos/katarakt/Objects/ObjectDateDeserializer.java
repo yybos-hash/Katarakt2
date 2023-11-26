@@ -15,8 +15,8 @@ public class ObjectDateDeserializer implements JsonDeserializer<Date> {
     private final SimpleDateFormat customDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
 
     @Override
-    public Date deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
-        String dateStr = jsonElement.getAsString();
+    public Date deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
+        String dateStr = json.getAsString();
         try {
             java.util.Date utilDate = customDateFormat.parse(dateStr);
             return new java.sql.Date(utilDate.getTime());

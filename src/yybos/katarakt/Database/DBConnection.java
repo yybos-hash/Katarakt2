@@ -68,7 +68,7 @@ public class DBConnection {
                 message.setMessage(text);
                 message.setDate(date);
                 message.setChat(chat);
-                message.setUser(user);
+                message.setUsername(user);
                 message.setUserId(userId);
 
                 messages.add(message);
@@ -98,8 +98,8 @@ public class DBConnection {
             ResultSet resultSet = preparedStatement.executeQuery();
 
             user.setId(id);
-            user.setName(resultSet.getString("nm"));
-            user.setPass(resultSet.getString("pass"));
+            user.setUsername(resultSet.getString("nm"));
+            user.setPassword(resultSet.getString("pass"));
         }
         catch (Exception e) {
             ConsoleLog.error(e.getMessage());
@@ -124,8 +124,8 @@ public class DBConnection {
                 return new User();
 
             user.setId(resultSet.getInt("id"));
-            user.setName(resultSet.getString("nm"));
-            user.setPass(resultSet.getString("pass"));
+            user.setUsername(resultSet.getString("nm"));
+            user.setPassword(resultSet.getString("pass"));
         }
         catch (Exception e) {
             ConsoleLog.error(e.getMessage());
@@ -133,6 +133,46 @@ public class DBConnection {
 
         this.close();
         return user;
+    }
+
+    public void registerUser (String email, String name, String password) {
+        this.connect();
+
+        try {
+            // insert user
+            String sql = "INSERT INTO users (email, nm, pass) VALUES (?, ?, ?)";
+
+            // prepare the sql and shit
+            PreparedStatement preparedStatement = this.connection.prepareStatement(sql);
+            preparedStatement.setString(1, email);
+            preparedStatement.setString(2, name);
+            preparedStatement.setString(3, password);
+
+            preparedStatement.executeUpdate();
+
+            // get the new user generated id
+            sql = "SELECT id FROM users WHERE email=?, pass=?";
+            preparedStatement = this.connection.prepareStatement(sql);
+            preparedStatement.setString(1, email);
+            preparedStatement.setString(2, password);
+
+            ResultSet resultSet = preparedStatement.executeQuery();
+            int newUserId = resultSet.getInt("id");
+
+            // create a initial chat for him
+           sql = "INSERT INTO chats (fk_user, nm) VALUES (?, 'Main')";
+
+            // prepare the sql and shit
+            preparedStatement = this.connection.prepareStatement(sql);
+            preparedStatement.setInt(1, newUserId);
+
+            preparedStatement.executeUpdate();
+        }
+        catch (Exception e) {
+            ConsoleLog.error(e.getMessage());
+        }
+
+        this.close();
     }
 
     public List<Chat> getChats (User user) {

@@ -3,6 +3,7 @@ package yybos.katarakt;
 import yybos.katarakt.Client.Client;
 import yybos.katarakt.Objects.Chat;
 import yybos.katarakt.Servers.ChatServer;
+import yybos.katarakt.Servers.ConnectionManager;
 import yybos.katarakt.Servers.MessageServer;
 
 public class Main {
@@ -23,10 +24,7 @@ public class Main {
 
         System.out.println("");
 
-        MessageServer msgServer = new MessageServer();
-        ChatServer chatServer = new ChatServer();
-
-        msgServer.run();
-        chatServer.run();
+        ConnectionManager manager = new ConnectionManager();
+        manager.listen();
     }
 }
