@@ -29,7 +29,7 @@ public class Chat extends PacketObject {
 
         Gson parser = gsonBuilder.serializeNulls().create();
 
-        return (Chat) parser.fromJson(json, PacketObject.class);
+        return parser.fromJson(json, Chat.class);
     }
 }
 

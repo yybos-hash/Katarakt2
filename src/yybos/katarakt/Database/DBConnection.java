@@ -3,6 +3,7 @@ package yybos.katarakt.Database;
 import yybos.katarakt.ConsoleLog;
 import yybos.katarakt.Objects.Chat;
 import yybos.katarakt.Objects.Message;
+import yybos.katarakt.Objects.PacketObject;
 import yybos.katarakt.Objects.User;
 
 import java.sql.*;
@@ -89,7 +90,7 @@ public class DBConnection {
         User user = new User();
 
         try {
-            String sql = "SELECT nm, pass FROM users WHERE id = ?";
+            String sql = "SELECT nm, pass, email FROM users WHERE id = ?";
 
             // prepare the sql and shit
             PreparedStatement preparedStatement = this.connection.prepareStatement(sql);
@@ -99,6 +100,7 @@ public class DBConnection {
 
             user.setId(id);
             user.setUsername(resultSet.getString("nm"));
+            user.setEmail(resultSet.getString("email"));
             user.setPassword(resultSet.getString("pass"));
         }
         catch (Exception e) {
@@ -125,6 +127,7 @@ public class DBConnection {
 
             user.setId(resultSet.getInt("id"));
             user.setUsername(resultSet.getString("nm"));
+            user.setEmail(email);
             user.setPassword(resultSet.getString("pass"));
         }
         catch (Exception e) {
@@ -175,8 +178,8 @@ public class DBConnection {
         this.close();
     }
 
-    public List<Chat> getChats (User user) {
-        if (user.getId() == 0)
+    public List<Chat> getChats (int user) {
+        if (user == 0)
             return null;
 
         this.connect();
@@ -184,19 +187,21 @@ public class DBConnection {
         Chat chat;
 
         try {
-            String sql = "SELECT id, nm FROM chats WHERE fk_user = ?";
+            String sql = "SELECT id, nm, created_at FROM chats WHERE fk_user = ?";
 
             // prepare the sql and shit
             PreparedStatement preparedStatement = this.connection.prepareStatement(sql);
-            preparedStatement.setInt(1, user.getId());
+            preparedStatement.setInt(1, user);
 
             ResultSet resultSet = preparedStatement.executeQuery();
             while (resultSet.next()) {
                 chat = new Chat();
 
+                chat.setType(PacketObject.Type.Chat.getValue());
                 chat.setId(resultSet.getInt("id"));
                 chat.setName(resultSet.getString("nm"));
-                chat.setUser(user.getId());
+                chat.setUser(user);
+                chat.setDate(resultSet.getDate("created_at"));
 
                 chats.add(chat);
             }

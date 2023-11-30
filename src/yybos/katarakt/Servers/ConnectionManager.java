@@ -43,7 +43,7 @@ public class ConnectionManager {
 
                         // authentication
                         // test version of the client (side note: now the version will come with the username and password as well. "1.9.0;username;password")
-                        String credentials = client.thisClient.readString();
+                        String credentials = new String(Constants.buffer, 0, client.thisClient.in.read(Constants.buffer), Constants.encoding);
 
                         String version = credentials.split(";")[0];
                         String email = credentials.split(";")[1].trim(); // trim because when client's email and password are null it send only a " ". Also trim spaces from the email and password

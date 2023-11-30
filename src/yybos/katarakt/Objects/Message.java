@@ -66,7 +66,7 @@ public class Message extends PacketObject {
 
         Gson parser = gsonBuilder.serializeNulls().create();
 
-        return (Message) parser.fromJson(json, PacketObject.class);
+        return parser.fromJson(json, Message.class);
     }
 
     @Override

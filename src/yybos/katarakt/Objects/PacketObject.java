@@ -72,15 +72,7 @@ public class PacketObject {
         //  Basically when gson formats a Date in the sql.Date format it changes the format, so this keeps the it as it should
 
         Gson parser = gsonBuilder.create();
-        PacketObject packetObject = parser.fromJson(json, PacketObject.class);
 
-        if (packetObject.type == Type.Message)
-            return parser.fromJson(json, Message.class);
-        else if (packetObject.type == Type.Chat)
-            return parser.fromJson(json, Chat.class);
-        else if (packetObject.type == Type.User)
-            return parser.fromJson(json, User.class);
-        else
-            return parser.fromJson(json, Command.class);
+        return parser.fromJson(json, PacketObject.class);
     }
 }

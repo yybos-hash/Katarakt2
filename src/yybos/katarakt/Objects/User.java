@@ -44,6 +44,6 @@ public class User extends PacketObject {
 
         Gson parser = gsonBuilder.serializeNulls().create();
 
-        return (User) parser.fromJson(json, PacketObject.class);
+        return parser.fromJson(json, User.class);
     }
 }

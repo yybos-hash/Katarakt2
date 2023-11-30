@@ -1,10 +1,6 @@
 package yybos.katarakt;
 
-import yybos.katarakt.Client.Client;
-import yybos.katarakt.Objects.Chat;
-import yybos.katarakt.Servers.ChatServer;
 import yybos.katarakt.Servers.ConnectionManager;
-import yybos.katarakt.Servers.MessageServer;
 
 public class Main {
     /*

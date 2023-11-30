@@ -96,10 +96,6 @@ public class Utils {
         out.flush();
     }
 
-    public String readString () throws IOException {
-        return new String(Constants.buffer, 0, this.in.read(Constants.buffer), Constants.encoding);
-    }
-
     public void close () {
         try {
             in.close();

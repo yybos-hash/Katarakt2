@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MessageServer {
-    private Client client;
+    private final Client client;
 
     public MessageServer (Client client) {
         this.client = client;
@@ -31,20 +31,6 @@ public class MessageServer {
         DBConnection dbConnection = new DBConnection();
 
         ConsoleLog.info("Connection accepted: " + client.ip);
-
-        try {
-            // send user information
-            String serializedUser = client.thisClient.serializeObject(client);
-            client.thisClient.sendRawMessage(serializedUser + "\0".repeat(110 - serializedUser.length()));
-        }
-        catch (Exception e) {
-            client.thisClient.close();
-
-            ConsoleLog.exception("Exception in client: " + client.ip);
-            ConsoleLog.error(e.getMessage());
-            ConsoleLog.info("Returning");
-            return;
-        }
 
         int packet;
         PacketObject packetObject;
@@ -74,7 +60,7 @@ public class MessageServer {
                     if (packet <= 0) // if the packet bytes count is less or equal to 0 then the client has disconnected, which means that the thread should be terminated
                         throw new IOException("Client connection was abruptly interrupted");
 
-                    String temp = client.thisClient.readString();
+                    String temp = new String(Constants.buffer, 0, packet, Constants.encoding);
 
                     // checks for the \0 in the temp
                     int i = temp.indexOf('\0');
@@ -88,19 +74,20 @@ public class MessageServer {
                     // tem que ter
                     rawMessage.append(temp);
                 } while (true);
+                rawMessage = new StringBuilder(rawMessage.toString().replace("\0", ""));
 
                 // parse raw packetObject
-                packetObject = PacketObject.fromString(rawMessage.toString().replace("\0", ""));
+                packetObject = PacketObject.fromString(rawMessage.toString());
 
                 // deal with message
                 if (packetObject.getType() == PacketObject.Type.Message) {
-                    Message message = (Message) packetObject;
+                    Message message = Message.fromString(rawMessage.toString());
 
                     ConsoleLog.info(client.ip + ": " + message.getMessage());
                     dbConnection.pushMessage(message);
                 }
                 else if (packetObject.getType() == Message.Type.Command) {
-                    Command command = (Command) packetObject;
+                    Command command = Command.fromString(rawMessage.toString());
 
                     switch (command.getCommand()) {
                         case "getChatHistory": {
@@ -110,7 +97,7 @@ public class MessageServer {
                             break;
                         }
                         case "getChats": {
-                            for (Chat chat : dbConnection.getChats(client))
+                            for (Chat chat : dbConnection.getChats(client.getId()))
                                 client.thisClient.sendObject(chat);
 
                             break;
