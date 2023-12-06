@@ -96,6 +96,11 @@ public class Utils {
         out.flush();
     }
 
+    // although the MessageServer has access to this method, it should NOT be used by it. This goes both ways with MediaServer
+    public void sendFile () {
+
+    }
+
     public void close () {
         try {
             in.close();

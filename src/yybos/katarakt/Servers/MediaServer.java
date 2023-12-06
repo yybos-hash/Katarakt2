@@ -1,29 +1,29 @@
 package yybos.katarakt.Servers;
 
 import yybos.katarakt.Client.Client;
+import yybos.katarakt.Client.Utils;
 import yybos.katarakt.ConsoleLog;
 import yybos.katarakt.Constants;
 import yybos.katarakt.Database.DBConnection;
 import yybos.katarakt.Objects.*;
 
 import java.io.IOException;
+import java.util.Base64;
 
-public class MessageServer {
+public class MediaServer {
     private final Client client;
 
-    public MessageServer (Client client) {
+    public MediaServer (Client client) {
         this.client = client;
     }
 
     public void run () {
-        Thread server = new Thread(() -> handleClient(this.client));
+        Thread server = new Thread(() -> this.handleClient(this.client));
         server.start();
     }
 
-    private void handleClient(Client client) {
+    private void handleClient (Client client) {
         DBConnection dbConnection = new DBConnection();
-
-        ConsoleLog.info("Connection accepted: " + client.ip);
 
         int packet;
         PacketObject packetObject;
@@ -73,29 +73,10 @@ public class MessageServer {
                 packetObject = PacketObject.fromString(rawMessage.toString());
 
                 // deal with message
-                if (packetObject.getType() == PacketObject.Type.Message) {
-                    Message message = Message.fromString(rawMessage.toString());
+                if (packetObject.getType() == PacketObject.Type.FileRequest) {
+                    MediaFile media = MediaFile.fromString(rawMessage.toString());
 
-                    ConsoleLog.info(client.ip + ": " + message.getMessage());
-                    dbConnection.pushMessage(message);
-                }
-                else if (packetObject.getType() == PacketObject.Type.Command) {
-                    Command command = Command.fromString(rawMessage.toString());
 
-                    switch (command.getCommand()) {
-                        case "getChatHistory": {
-                            for (Message chatMessage : dbConnection.getLog(command.getA()))
-                                client.thisClient.sendObject(chatMessage);
-
-                            break;
-                        }
-                        case "getChats": {
-                            for (Chat chat : dbConnection.getChats(client.getId()))
-                                client.thisClient.sendObject(chat);
-
-                            break;
-                        }
-                    }
                 }
             }
         }

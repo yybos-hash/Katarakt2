@@ -45,7 +45,9 @@ public class PacketObject {
         Command(1),
         Version(2),
         User(3),
-        Chat(4);
+        Login(4),
+        FileRequest(5),
+        Chat(6);
 
         private final int value;
 

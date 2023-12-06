@@ -34,6 +34,14 @@ public class Command extends PacketObject {
         return this.h;
     }
 
+    public static Command askForUsername () {
+        Command from = new Command();
+        from.type = Type.Command;
+        from.e = "usernameRequest";
+
+        return from;
+    }
+
     public static Command fromString (String json) {
         GsonBuilder gsonBuilder = new GsonBuilder();
         gsonBuilder.registerTypeAdapter(Date.class, new ObjectDateDeserializer());

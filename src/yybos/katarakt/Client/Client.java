@@ -18,7 +18,7 @@ public class Client extends User {
     public Client (Socket clientSocket) {
         this.socket = clientSocket;
 
-        this.ip = socket.getInetAddress().toString();
+        this.ip = socket.getInetAddress().toString().replace("/", "");
         this.thisClient = new Utils(socket);
     }
 }

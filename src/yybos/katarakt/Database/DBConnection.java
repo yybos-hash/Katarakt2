@@ -154,7 +154,7 @@ public class DBConnection {
             preparedStatement.executeUpdate();
 
             // get the new user generated id
-            sql = "SELECT id FROM users WHERE email=?, pass=?";
+            sql = "SELECT id FROM users WHERE email=? AND pass=?";
             preparedStatement = this.connection.prepareStatement(sql);
             preparedStatement.setString(1, email);
             preparedStatement.setString(2, password);

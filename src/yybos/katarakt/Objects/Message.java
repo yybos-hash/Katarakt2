@@ -59,6 +59,17 @@ public class Message extends PacketObject {
 
         return from;
     }
+    public static Message toMessage (String message, String username) {
+        Message from = new Message();
+        from.type = Type.Message;
+        from.e = message;
+        from.a = 0;
+        from.f = username;
+        from.b = 0;
+        from.date = new Date(System.currentTimeMillis());
+
+        return from;
+    }
     public static Message fromString (String json) {
         GsonBuilder gsonBuilder = new GsonBuilder();
         gsonBuilder.registerTypeAdapter(Date.class, new ObjectDateDeserializer());

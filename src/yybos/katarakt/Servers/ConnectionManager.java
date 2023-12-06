@@ -4,10 +4,9 @@ import yybos.katarakt.Client.Client;
 import yybos.katarakt.ConsoleLog;
 import yybos.katarakt.Constants;
 import yybos.katarakt.Database.DBConnection;
-import yybos.katarakt.Objects.Message;
-import yybos.katarakt.Objects.PacketObject;
-import yybos.katarakt.Objects.User;
+import yybos.katarakt.Objects.*;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -22,11 +21,11 @@ public class ConnectionManager {
         try {
             InetAddress InetHostname = InetAddress.getByName(Constants.server);
 
-            ConsoleLog.info("Binding Connection Manager to address " + Constants.server + ". Using port [" + Constants.messagePort + ']');
+            ConsoleLog.info("Binding Connection Manager to address " + Constants.server + ". Using port [" + Constants.managerPort + ']');
 
             // bind main server socket
             ServerSocket server = new ServerSocket();
-            server.bind(new InetSocketAddress(InetHostname, Constants.messagePort));
+            server.bind(new InetSocketAddress(InetHostname, Constants.managerPort));
 
             if (!server.isBound())
                 return;
@@ -41,16 +40,44 @@ public class ConnectionManager {
                     try {
                         client = new Client(server.accept());
 
-                        // authentication
-                        // test version of the client (side note: now the version will come with the username and password as well. "1.9.0;username;password")
-                        String credentials = new String(Constants.buffer, 0, client.thisClient.in.read(Constants.buffer), Constants.encoding);
+                        // receive credentials packetObject
+                        String credentials;
+                        try {
+                            int packet;
+                            StringBuilder rawMessage = new StringBuilder();
 
-                        String version = credentials.split(";")[0];
-                        String email = credentials.split(";")[1].trim(); // trim because when client's email and password are null it send only a " ". Also trim spaces from the email and password
-                        String password = credentials.split(";")[2].trim();
+                            // while there is no null character in temp, keep receiving
+                            do {
+                                packet = client.thisClient.in.read(Constants.buffer);
+                                if (packet <= 0) // if the packet bytes count is less or equal to 0 then the client has disconnected, which means that the thread should be terminated
+                                    throw new IOException("Client connection was abruptly interrupted");
+
+                                String temp = new String(Constants.buffer, 0, packet, Constants.encoding);
+
+                                if (!temp.contains("\0"))
+                                    rawMessage.append(temp);
+                                else {
+                                    rawMessage.append(temp, 0, temp.indexOf("\0") + 1);
+                                    break;
+                                }
+                            } while (true);
+                            credentials = rawMessage.toString().replace("\0", "");
+                        }
+                        catch (Exception e) {
+                            ConsoleLog.exception(e.getMessage());
+                            return;
+                        }
+
+                        // authentication
+                        Login login = Login.fromString(credentials);
+
+                        String version = login.getVersion();
+                        String email = login.getEmail().trim(); // trim because when client's email and password are null it send only a " ". Also trim spaces from the email and password
+                        String password = login.getPassword().trim();
+                        int serverId = login.getServer();
 
                         if (!version.equals(Constants.version)) {
-                            Message message = Message.toMessage("Wrong version, stupid", 0, "Server", 0);
+                            Message message = Message.toMessage("Wrong version, stupid", "Server");
                             client.thisClient.sendObject(message);
 
                             continue;
@@ -62,17 +89,21 @@ public class ConnectionManager {
                         client.setPassword(password);
 
                         if (dbUser.getEmail() == null) {
-                            Message message = Message.toMessage("Email does not exist", 0, "Server", 0);
-                            client.thisClient.sendObject(message);
+                            dbUser.setUsername(client.ip);
+
+                            // user doesnt exist (yet). Register him
+                            db.registerUser(email, dbUser.getUsername(), password);
 
                             continue;
                         }
                         else if (!client.getPassword().equals(dbUser.getPassword())) {
-                            Message message = Message.toMessage("Apologies, nigga. But the PASSWORD DOES NOT SEEM TO BE CORRECT", 0, "Server", 0);
+                            Message message = Message.toMessage("Apologies, nigga. But the PASSWORD DOES NOT SEEM TO BE CORRECT", "Server");
                             client.thisClient.sendObject(message);
 
                             continue;
                         }
+                        // get the dbUser again
+                        dbUser = db.getUser(email);
 
                         client.setId(dbUser.getId());
                         client.setUsername(dbUser.getUsername());
@@ -80,10 +111,18 @@ public class ConnectionManager {
                         // send the credentials to the client
                         client.thisClient.sendObject(User.toUser(client.getId(), client.getUsername(), client.getEmail(), client.getPassword()));
 
-                        MessageServer messageServer = new MessageServer(client);
-                        messageServer.run();
+                        if (serverId == Constants.messagePort) {
+                            MessageServer messageServer = new MessageServer(client);
+                            messageServer.run();
+                        }
+                        else if (serverId == Constants.mediaPort) {
+                            MediaServer mediaServer = new MediaServer(client);
+                            mediaServer.run();
+                        }
                     }
                     catch (Exception e) {
+                        ConsoleLog.exception("Exception in Connection Manager");
+                        ConsoleLog.info("Happens. Continuing");
                         continue;
                     }
 
