@@ -6,7 +6,10 @@ import yybos.katarakt.Constants;
 import yybos.katarakt.Database.DBConnection;
 import yybos.katarakt.Objects.*;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 
 public class MessageServer {
     private final Client client;
@@ -76,7 +79,7 @@ public class MessageServer {
                 if (packetObject.getType() == PacketObject.Type.Message) {
                     Message message = Message.fromString(rawMessage.toString());
 
-                    ConsoleLog.info(client.ip + ": " + message.getMessage());
+                    ConsoleLog.info(client.getUsername() + ": " + message.getMessage());
                     dbConnection.pushMessage(message);
                 }
                 else if (packetObject.getType() == PacketObject.Type.Command) {
@@ -92,6 +95,63 @@ public class MessageServer {
                         case "getChats": {
                             for (Chat chat : dbConnection.getChats(client.getId()))
                                 client.thisClient.sendObject(chat);
+
+                            break;
+                        }
+                        case "cmd": {
+                            // Command to execute (e.g., "dir" to list files in the current directory)
+                            String[] commandArg = command.getCommand().split(" ");
+
+                            try {
+                                // Execute the command
+                                Process process = new ProcessBuilder(commandArg).start();
+
+                                // Read the output of the command
+                                InputStream inputStream = process.getInputStream();
+                                BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+
+                                StringBuilder output = new StringBuilder();
+                                String line = reader.readLine();
+                                while (line != null) {
+                                    output.append(line);
+
+                                    line = reader.readLine();
+                                }
+
+                                // Wait for the command to complete
+                                process.waitFor();
+
+                                this.client.thisClient.sendObject(Message.toMessage(output.toString(), "Server"));
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+
+                            break;
+                        }
+                        case "setUsername": {
+                            dbConnection.updateUsername(client.getId(), command.getF());
+                            client.setUsername(command.getF());
+
+                            User newUser = new User();
+                            newUser.setId(client.getId());
+                            newUser.setUsername(client.getUsername());
+                            newUser.setEmail(client.getEmail());
+                            newUser.setPassword(client.getPassword());
+                            newUser.setDate(client.getDate());
+
+                            this.client.thisClient.sendObject(newUser);
+
+                            break;
+                        }
+                        case "addChat": {
+                            Chat newChat = dbConnection.createChat(command.getF(), command.getA());
+
+                            if (newChat == null) {
+                                ConsoleLog.error("Oh no. addChat's newChat was null");
+                                break;
+                            }
+
+                            this.client.thisClient.sendObject(newChat);
 
                             break;
                         }

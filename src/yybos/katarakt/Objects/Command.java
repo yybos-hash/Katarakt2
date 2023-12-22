@@ -6,6 +6,10 @@ import com.google.gson.GsonBuilder;
 import java.sql.Date;
 
 public class Command extends PacketObject {
+    public Command () {
+        super.setType(PacketObject.Type.Command.getValue());
+    }
+
     public String getCommand () {
         return this.e;
     }
@@ -21,9 +25,6 @@ public class Command extends PacketObject {
     public int getD () {
         return this.d;
     }
-    public String getE () {
-        return this.e;
-    }
     public String getF () {
         return this.f;
     }
@@ -36,7 +37,6 @@ public class Command extends PacketObject {
 
     public static Command askForUsername () {
         Command from = new Command();
-        from.type = Type.Command;
         from.e = "usernameRequest";
 
         return from;

@@ -92,9 +92,7 @@ public class ConnectionManager {
                             dbUser.setUsername(client.ip);
 
                             // user doesnt exist (yet). Register him
-                            db.registerUser(email, dbUser.getUsername(), password);
-
-                            continue;
+                            db.registerUser(email, "", password);
                         }
                         else if (!client.getPassword().equals(dbUser.getPassword())) {
                             Message message = Message.toMessage("Apologies, nigga. But the PASSWORD DOES NOT SEEM TO BE CORRECT", "Server");
@@ -102,6 +100,13 @@ public class ConnectionManager {
 
                             continue;
                         }
+
+                        // if the user doesnt have a username ask for one
+                        if (dbUser.getUsername() == null || dbUser.getUsername().isBlank()) {
+                            Command command = Command.askForUsername();
+                            client.thisClient.sendObject(command);
+                        }
+
                         // get the dbUser again
                         dbUser = db.getUser(email);
 

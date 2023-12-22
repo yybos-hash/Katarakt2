@@ -160,6 +160,7 @@ public class DBConnection {
             preparedStatement.setString(2, password);
 
             ResultSet resultSet = preparedStatement.executeQuery();
+            resultSet.next();
             int newUserId = resultSet.getInt("id");
 
             // create a initial chat for him
@@ -212,6 +213,72 @@ public class DBConnection {
 
         this.close();
         return chats;
+    }
+    public Chat createChat (String name, int user) {
+        this.connect();
+        Chat chat = new Chat();
+
+        try {
+            String sql;
+            PreparedStatement preparedStatement;
+
+            sql = "INSERT INTO chats (nm, fk_user) VALUES (?, ?)";
+
+            // prepare the sql and shit
+            preparedStatement = this.connection.prepareStatement(sql);
+            preparedStatement.setString(1, name);
+            preparedStatement.setInt(2, user);
+
+            // get chat
+
+            // this gets the rows affected
+            try (ResultSet generatedKeys = preparedStatement.getGeneratedKeys()) {
+                if (!generatedKeys.next())
+                    return null;
+
+                long generatedKey = generatedKeys.getLong(1);
+
+                String selectSql = "SELECT id, created_at FROM chats WHERE id = ?";
+                try (PreparedStatement selectStatement = connection.prepareStatement(selectSql)) {
+                    selectStatement.setLong(1, generatedKey);
+                    try (ResultSet resultSet = selectStatement.executeQuery()) {
+                        while (resultSet.next()) {
+                            chat.setId(resultSet.getInt("id"));
+                            chat.setName(name);
+                            chat.setUser(user);
+                            chat.setDate(resultSet.getDate("created_at"));
+                        }
+                    }
+                }
+            }
+        }
+        catch (Exception e) {
+            ConsoleLog.error(e.getMessage());
+        }
+
+        this.close();
+        return chat;
+    }
+
+    public void updateUsername (int id, String newUsername) {
+        this.connect();
+
+        try {
+            // insert user
+            String sql = "UPDATE users SET nm=? WHERE id=?";
+
+            // prepare the sql and shit
+            PreparedStatement preparedStatement = this.connection.prepareStatement(sql);
+            preparedStatement.setString(1, newUsername);
+            preparedStatement.setInt(2, id);
+
+            preparedStatement.executeUpdate();
+        }
+        catch (Exception e) {
+            ConsoleLog.error(e.getMessage());
+        }
+
+        this.close();
     }
 
     private void connect () {

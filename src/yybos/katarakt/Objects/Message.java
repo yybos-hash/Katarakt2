@@ -16,6 +16,10 @@ import com.google.gson.GsonBuilder;
 import java.sql.Date;
 
 public class Message extends PacketObject {
+    public Message () {
+        super.setType(PacketObject.Type.Message.getValue());
+    }
+
     public int getId () {
         return this.id;
     }
@@ -50,7 +54,6 @@ public class Message extends PacketObject {
 
     public static Message toMessage (String message, int chat, String username, int userId) {
         Message from = new Message();
-        from.type = Type.Message;
         from.e = message;
         from.a = chat;
         from.f = username;
@@ -61,7 +64,6 @@ public class Message extends PacketObject {
     }
     public static Message toMessage (String message, String username) {
         Message from = new Message();
-        from.type = Type.Message;
         from.e = message;
         from.a = 0;
         from.f = username;
