@@ -72,7 +72,7 @@ public class ConnectionManager {
                         Login login = Login.fromString(credentials);
 
                         String version = login.getVersion();
-                        String email = login.getEmail().trim(); // trim because when client's email and password are null it send only a " ". Also trim spaces from the email and password
+                        String email = login.getEmail().trim(); // trim because when client's email and password are null it sends only a " ". Also trim spaces from the email and password
                         String password = login.getPassword().trim();
                         int serverId = login.getServer();
 
@@ -85,36 +85,39 @@ public class ConnectionManager {
 
                         User dbUser = db.getUser(email);
 
-                        client.setEmail(email);
-                        client.setPassword(password);
-
                         if (dbUser.getEmail() == null) {
                             dbUser.setUsername(client.ip);
 
                             // user doesnt exist (yet). Register him
                             db.registerUser(email, "", password);
+
+                            client.thisClient.sendObject(Message.toMessage("No account? No problem. I (The Server) created a brand new account for you", "Server"));
+                            client.thisClient.sendObject(Message.toMessage("Oh, by the way! A main chat was created for you as well. Of course, you can rename the chat later (Maybe, idk if I will create that function)", "The server.. Again"));
                         }
-                        else if (!client.getPassword().equals(dbUser.getPassword())) {
-                            Message message = Message.toMessage("Apologies, nigga. But the PASSWORD DOES NOT SEEM TO BE CORRECT", "Server");
-                            client.thisClient.sendObject(message);
+                        else if (!password.equals(dbUser.getPassword())) {
+                            Command errorToast = Command.errorToast("Apologies, nigga. But the PASSWORD DOES NOT SEEM TO BE CORRECT");
+                            client.thisClient.sendObject(errorToast);
+                            client.thisClient.close();
 
                             continue;
                         }
 
-                        // if the user doesnt have a username ask for one
-                        if (dbUser.getUsername() == null || dbUser.getUsername().isBlank()) {
+                        // if the user doesnt have an username the server will keep asking for it everytime he logs in
+                        if (dbUser.getUsername().isBlank() || dbUser.getUsername() == null) {
                             Command command = Command.askForUsername();
                             client.thisClient.sendObject(command);
                         }
 
-                        // get the dbUser again
+                        // get the dbUser again (because of the id)
                         dbUser = db.getUser(email);
 
                         client.setId(dbUser.getId());
                         client.setUsername(dbUser.getUsername());
+                        client.setEmail(email);
+                        client.setPassword(password);
 
                         // send the credentials to the client
-                        client.thisClient.sendObject(User.toUser(client.getId(), client.getUsername(), client.getEmail(), client.getPassword()));
+                        client.thisClient.sendObject(dbUser);
 
                         if (serverId == Constants.messagePort) {
                             MessageServer messageServer = new MessageServer(client);
@@ -127,6 +130,7 @@ public class ConnectionManager {
                     }
                     catch (Exception e) {
                         ConsoleLog.exception("Exception in Connection Manager");
+                        e.printStackTrace();
                         ConsoleLog.info("Happens. Continuing");
                         continue;
                     }

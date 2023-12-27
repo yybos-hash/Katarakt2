@@ -10,6 +10,14 @@ public class Command extends PacketObject {
         super.setType(PacketObject.Type.Command.getValue());
     }
 
+    public static Command errorToast(String s) {
+        Command from = new Command();
+        from.e = "errorToast";
+        from.f = s;
+
+        return from;
+    }
+
     public String getCommand () {
         return this.e;
     }

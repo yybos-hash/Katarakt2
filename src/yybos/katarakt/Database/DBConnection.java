@@ -161,10 +161,11 @@ public class DBConnection {
 
             ResultSet resultSet = preparedStatement.executeQuery();
             resultSet.next();
+
             int newUserId = resultSet.getInt("id");
 
             // create a initial chat for him
-           sql = "INSERT INTO chats (fk_user, nm) VALUES (?, 'Main')";
+            sql = "INSERT INTO chats (fk_user, nm) VALUES (?, 'Main')";
 
             // prepare the sql and shit
             preparedStatement = this.connection.prepareStatement(sql);
@@ -197,8 +198,6 @@ public class DBConnection {
             ResultSet resultSet = preparedStatement.executeQuery();
             while (resultSet.next()) {
                 chat = new Chat();
-
-                chat.setType(PacketObject.Type.Chat.getValue());
                 chat.setId(resultSet.getInt("id"));
                 chat.setName(resultSet.getString("nm"));
                 chat.setUser(user);
@@ -216,7 +215,6 @@ public class DBConnection {
     }
     public Chat createChat (String name, int user) {
         this.connect();
-        Chat chat = new Chat();
 
         try {
             String sql;
@@ -225,39 +223,41 @@ public class DBConnection {
             sql = "INSERT INTO chats (nm, fk_user) VALUES (?, ?)";
 
             // prepare the sql and shit
-            preparedStatement = this.connection.prepareStatement(sql);
+            preparedStatement = this.connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             preparedStatement.setString(1, name);
             preparedStatement.setInt(2, user);
+            preparedStatement.executeUpdate();
 
-            // get chat
+            // Retrieve the generated keys (auto-incremented IDs)
+            ResultSet generatedKeys = preparedStatement.getGeneratedKeys();
+            generatedKeys.next();
 
-            // this gets the rows affected
-            try (ResultSet generatedKeys = preparedStatement.getGeneratedKeys()) {
-                if (!generatedKeys.next())
-                    return null;
+            int newChatId = generatedKeys.getInt(1);
 
-                long generatedKey = generatedKeys.getLong(1);
+            sql = "SELECT * FROM chats WHERE id=?";
 
-                String selectSql = "SELECT id, created_at FROM chats WHERE id = ?";
-                try (PreparedStatement selectStatement = connection.prepareStatement(selectSql)) {
-                    selectStatement.setLong(1, generatedKey);
-                    try (ResultSet resultSet = selectStatement.executeQuery()) {
-                        while (resultSet.next()) {
-                            chat.setId(resultSet.getInt("id"));
-                            chat.setName(name);
-                            chat.setUser(user);
-                            chat.setDate(resultSet.getDate("created_at"));
-                        }
-                    }
-                }
-            }
+            // prepare the sql and shit
+            preparedStatement = this.connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            preparedStatement.setInt(1, newChatId);
+
+            ResultSet resultSet = preparedStatement.executeQuery();
+            resultSet.next();
+
+            Chat chat = new Chat();
+            chat.setId(resultSet.getInt("id"));
+            chat.setName(name);
+            chat.setUser(user);
+            chat.setDate(resultSet.getDate("created_at"));
+
+            return chat;
         }
         catch (Exception e) {
             ConsoleLog.error(e.getMessage());
         }
 
         this.close();
-        return chat;
+
+        return null;
     }
 
     public void updateUsername (int id, String newUsername) {
@@ -271,6 +271,25 @@ public class DBConnection {
             PreparedStatement preparedStatement = this.connection.prepareStatement(sql);
             preparedStatement.setString(1, newUsername);
             preparedStatement.setInt(2, id);
+
+            preparedStatement.executeUpdate();
+        }
+        catch (Exception e) {
+            ConsoleLog.error(e.getMessage());
+        }
+
+        this.close();
+    }
+    public void deleteChat(int id) {
+        this.connect();
+
+        try {
+            // insert user
+            String sql = "DELETE FROM chats WHERE id=?";
+
+            // prepare the sql and shit
+            PreparedStatement preparedStatement = this.connection.prepareStatement(sql);
+            preparedStatement.setInt(1, id);
 
             preparedStatement.executeUpdate();
         }

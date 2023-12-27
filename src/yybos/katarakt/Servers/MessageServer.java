@@ -86,19 +86,15 @@ public class MessageServer {
                     Command command = Command.fromString(rawMessage.toString());
 
                     switch (command.getCommand()) {
-                        case "getChatHistory": {
+                        case "getChatHistory" -> {
                             for (Message chatMessage : dbConnection.getLog(command.getA()))
                                 client.thisClient.sendObject(chatMessage);
-
-                            break;
                         }
-                        case "getChats": {
+                        case "getChats" -> {
                             for (Chat chat : dbConnection.getChats(client.getId()))
                                 client.thisClient.sendObject(chat);
-
-                            break;
                         }
-                        case "cmd": {
+                        case "cmd" -> {
                             // Command to execute (e.g., "dir" to list files in the current directory)
                             String[] commandArg = command.getCommand().split(" ");
 
@@ -125,10 +121,11 @@ public class MessageServer {
                             } catch (IOException e) {
                                 e.printStackTrace();
                             }
-
-                            break;
                         }
-                        case "setUsername": {
+                        case "setUsername" -> {
+                            if (command.getF().isBlank())
+                                break;
+
                             dbConnection.updateUsername(client.getId(), command.getF());
                             client.setUsername(command.getF());
 
@@ -140,20 +137,22 @@ public class MessageServer {
                             newUser.setDate(client.getDate());
 
                             this.client.thisClient.sendObject(newUser);
-
-                            break;
                         }
-                        case "addChat": {
-                            Chat newChat = dbConnection.createChat(command.getF(), command.getA());
+                        case "createChat" -> {
+                            if (command.getF().isBlank())
+                                break;
+
+                            Chat newChat = dbConnection.createChat(command.getF(), client.getId());
 
                             if (newChat == null) {
-                                ConsoleLog.error("Oh no. addChat's newChat was null");
+                                client.thisClient.sendObject(Command.errorToast("Failed to create chat :("));
                                 break;
                             }
 
-                            this.client.thisClient.sendObject(newChat);
-
-                            break;
+                            client.thisClient.sendObject(newChat);
+                        }
+                        case "deleteChat" -> {
+                            dbConnection.deleteChat(command.getA());
                         }
                     }
                 }

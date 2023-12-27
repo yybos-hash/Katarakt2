@@ -25,6 +25,15 @@ public class Chat extends PacketObject {
 
         return chat;
     }
+    public static Chat toChat (int id, int user, Date date, String name) {
+        Chat chat = new Chat();
+        chat.id = id;
+        chat.a = user;
+        chat.e = name;
+        chat.date = date;
+
+        return chat;
+    }
     public static Chat fromString (String json) {
         GsonBuilder gsonBuilder = new GsonBuilder();
         gsonBuilder.registerTypeAdapter(Date.class, new ObjectDateDeserializer());

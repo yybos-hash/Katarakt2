@@ -6,7 +6,7 @@ package yybos.katarakt.Objects;
  *       "message": "message bla bla bla",
  *       "type": "Message"
  *       "size": "19"
- *   /0}
+ *   }/0
  */
 
 
@@ -16,6 +16,8 @@ import com.google.gson.GsonBuilder;
 import java.sql.Date;
 
 public class Message extends PacketObject {
+    private final User user = new User();
+
     public Message () {
         super.setType(PacketObject.Type.Message.getValue());
     }
@@ -30,10 +32,10 @@ public class Message extends PacketObject {
         return this.a;
     }
     public String getUsername () {
-        return this.f;
+        return this.user.getUsername();
     }
     public int getUserId () {
-        return this.b;
+        return this.user.getId();
     }
     public Date getDate () {
         return this.date;
@@ -46,18 +48,18 @@ public class Message extends PacketObject {
         this.a = id;
     }
     public void setUsername (String username) {
-        this.f = username;
+        this.user.setUsername(username);
     }
     public void setUserId (int id) {
-        this.b = id;
+        this.user.setId(id);
     }
 
     public static Message toMessage (String message, int chat, String username, int userId) {
         Message from = new Message();
         from.e = message;
         from.a = chat;
-        from.f = username;
-        from.b = userId;
+        from.user.setUsername(username);
+        from.user.setId(userId);
         from.date = new Date(System.currentTimeMillis());
 
         return from;
@@ -66,7 +68,7 @@ public class Message extends PacketObject {
         Message from = new Message();
         from.e = message;
         from.a = 0;
-        from.f = username;
+        from.user.setUsername(username);
         from.b = 0;
         from.date = new Date(System.currentTimeMillis());
 
