@@ -17,6 +17,10 @@ public class Chat extends PacketObject {
         this.a = id;
     }
 
+    public String getName () {
+        return this.e;
+    }
+
     public static Chat toChat (int id, int user, String name) {
         Chat chat = new Chat();
         chat.id = id;
@@ -42,6 +46,11 @@ public class Chat extends PacketObject {
         Gson parser = gsonBuilder.serializeNulls().create();
 
         return parser.fromJson(json, Chat.class);
+    }
+
+    @Override
+    public String toString () {
+        return "id: " + this.id + "\n" + "name: " + this.e + "\n" + "date: " + this.date;
     }
 }
 

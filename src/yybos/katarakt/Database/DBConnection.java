@@ -55,6 +55,7 @@ public class DBConnection {
             preparedStatement.setInt(2, this.logLimit);
 
             ResultSet resultSet = preparedStatement.executeQuery();
+
             while (resultSet.next()) {
                 int id = resultSet.getInt("id");
                 int type = resultSet.getInt("fk_type");

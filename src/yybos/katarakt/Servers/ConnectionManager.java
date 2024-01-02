@@ -95,8 +95,7 @@ public class ConnectionManager {
                             client.thisClient.sendObject(Message.toMessage("Oh, by the way! A main chat was created for you as well. Of course, you can rename the chat later (Maybe, idk if I will create that function)", "The server.. Again"));
                         }
                         else if (!password.equals(dbUser.getPassword())) {
-                            Command errorToast = Command.errorToast("Apologies, nigga. But the PASSWORD DOES NOT SEEM TO BE CORRECT");
-                            client.thisClient.sendObject(errorToast);
+                            client.thisClient.sendObject(Command.errorToast("Wrong password, lil nigga"));
                             client.thisClient.close();
 
                             continue;

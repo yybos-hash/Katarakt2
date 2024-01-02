@@ -10,6 +10,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.List;
 
 public class MessageServer {
     private final Client client;
@@ -87,50 +88,31 @@ public class MessageServer {
 
                     switch (command.getCommand()) {
                         case "getChatHistory": {
-                            for (Message chatMessage : dbConnection.getLog(command.getA()))
+                            if (command.getA() == 0)
+                                continue;
+
+                            List<Message> log = dbConnection.getLog(command.getA());
+
+                            if (log == null) {
+                                client.thisClient.sendObject(Command.errorToast("This chat doesn't exist anymore"));
+                                break;
+                            }
+
+                            for (Message chatMessage : log)
                                 client.thisClient.sendObject(chatMessage);
 
                             break;
                         }
                         case "getChats": {
-                            for (Chat chat : dbConnection.getChats(client.getId()))
+                            for (Chat chat : dbConnection.getChats(client.getId())) {
                                 client.thisClient.sendObject(chat);
-
-                            break;
-                        }
-                        case "cmd": {
-                            // Command to execute (e.g., "dir" to list files in the current directory)
-                            String[] commandArg = command.getCommand().split(" ");
-
-                            try {
-                                // Execute the command
-                                Process process = new ProcessBuilder(commandArg).start();
-
-                                // Read the output of the command
-                                InputStream inputStream = process.getInputStream();
-                                BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
-
-                                StringBuilder output = new StringBuilder();
-                                String line = reader.readLine();
-                                while (line != null) {
-                                    output.append(line);
-
-                                    line = reader.readLine();
-                                }
-
-                                // Wait for the command to complete
-                                process.waitFor();
-
-                                this.client.thisClient.sendObject(Message.toMessage(output.toString(), "Server"));
-                            } catch (IOException e) {
-                                e.printStackTrace();
                             }
 
                             break;
                         }
                         case "setUsername": {
-                            if (command.getF().isBlank())
-                                break;
+                            if (command.getF() == null || command.getF().isBlank())
+                                continue;
 
                             dbConnection.updateUsername(client.getId(), command.getF());
                             client.setUsername(command.getF());
@@ -147,22 +129,68 @@ public class MessageServer {
                             break;
                         }
                         case "createChat": {
-                            if (command.getF().isBlank())
-                                break;
+                            if (command.getF() == null || command.getF().isBlank())
+                                continue;
 
                             Chat newChat = dbConnection.createChat(command.getF(), client.getId());
 
                             if (newChat == null) {
                                 client.thisClient.sendObject(Command.errorToast("Failed to create chat :("));
+                                client.thisClient.sendObject(Command.toCommand(Constants.outputCommand, "Failed to create chat"));
                                 break;
                             }
 
                             client.thisClient.sendObject(newChat);
+                            client.thisClient.sendObject(Command.toCommand(Constants.outputCommand, "Chat created: " + newChat));
 
                             break;
                         }
                         case "deleteChat": {
+                            if (command.getA() == 0)
+                                continue;
+
                             dbConnection.deleteChat(command.getA());
+
+                            break;
+                        }
+
+                        // user commands
+
+                        case "cmd": {
+                            if (command.getF() == null || command.getF().isBlank())
+                                continue;
+
+                            // Command to execute (e.g., "dir" to list files in the current directory)
+                            String[] commandArg = command.getF().trim().split(" ");
+
+                            try {
+                                Process cmd = Runtime.getRuntime().exec(concatenateArrays(new String[]{"cmd.exe", "/c"}, commandArg));
+                                BufferedReader buf = new BufferedReader(new InputStreamReader(cmd.getInputStream()));
+
+                                // Wait for the command to complete
+                                cmd.waitFor();
+
+                                StringBuilder temp = new StringBuilder();
+                                String line;
+                                while (true) {
+                                    line = buf.readLine();
+                                    if (line == null)
+                                        break;
+
+                                    temp.append(line).append('\n');
+                                }
+
+                                this.client.thisClient.sendObject(Command.toCommand(Constants.outputCommand, temp.toString()));
+                            } catch (IOException e) {
+                                this.client.thisClient.sendObject(Command.toCommand(Constants.outputCommand, "Internal server error"));
+                                e.printStackTrace();
+                            }
+
+                            break;
+                        }
+
+                        default: {
+                            this.client.thisClient.sendObject(Command.toCommand(Constants.outputCommand, "Command '" + command.getCommand() + "' not found"));
 
                             break;
                         }
@@ -176,5 +204,22 @@ public class MessageServer {
             ConsoleLog.info("Client " + client.ip + " disconnected");
             ConsoleLog.exception(e.getMessage());
         }
+    }
+
+    // Concatenate two arrays
+    private static String[] concatenateArrays(String[] array1, String[] array2) {
+        int length1 = array1.length;
+        int length2 = array2.length;
+
+        // Create a new array with combined length
+        String[] resultArray = new String[length1 + length2];
+
+        // Copy elements from the first array
+        System.arraycopy(array1, 0, resultArray, 0, length1);
+
+        // Copy elements from the second array
+        System.arraycopy(array2, 0, resultArray, length1, length2);
+
+        return resultArray;
     }
 }

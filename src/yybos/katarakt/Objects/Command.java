@@ -17,6 +17,14 @@ public class Command extends PacketObject {
 
         return from;
     }
+    public static Command toCommand (String command, String args) {
+        Command from = new Command();
+        from.type = Type.Command;
+        from.e = command;
+        from.f = args;
+
+        return from;
+    }
 
     public String getCommand () {
         return this.e;
