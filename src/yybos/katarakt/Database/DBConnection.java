@@ -3,7 +3,6 @@ package yybos.katarakt.Database;
 import yybos.katarakt.ConsoleLog;
 import yybos.katarakt.Objects.Chat;
 import yybos.katarakt.Objects.Message;
-import yybos.katarakt.Objects.PacketObject;
 import yybos.katarakt.Objects.User;
 
 import java.sql.*;
@@ -11,10 +10,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DBConnection {
-    private final String jdbcUrl = "jdbc:mysql://localhost:3306/katarakt2"; // jdbc:mysql://141.144.226.199:52000/blackness-db Kitsune
-    private final String username = "root"; // blackness kitsune
-    private final String password = ""; // 062GibRGp+2a kitsune
-    private final int logLimit = 50; // max number of messages that can be retrieved at once
 
     private Connection connection;
 
@@ -52,7 +47,9 @@ public class DBConnection {
             // prepare the sql and shit
             PreparedStatement preparedStatement = this.connection.prepareStatement(sql);
             preparedStatement.setInt(1, chat);
-            preparedStatement.setInt(2, this.logLimit);
+            // max number of messages that can be retrieved at once
+            int logLimit = 50;
+            preparedStatement.setInt(2, logLimit);
 
             ResultSet resultSet = preparedStatement.executeQuery();
 
@@ -303,6 +300,12 @@ public class DBConnection {
 
     private void connect () {
         try {
+            // jdbc:mysql://141.144.226.199:52000/blackness-db Kitsune
+            String jdbcUrl = "jdbc:mysql://localhost:3306/katarakt2";
+            // blackness kitsune
+            String username = "root";
+            // 062GibRGp+2a kitsune
+            String password = "";
             this.connection = DriverManager.getConnection(jdbcUrl, username, password);
         }
         catch (Exception e) {
