@@ -1,10 +1,16 @@
 package yybos.katarakt.Servers;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import yybos.katarakt.Client.Client;
 import yybos.katarakt.ConsoleLog;
 import yybos.katarakt.Constants;
 import yybos.katarakt.Database.DBConnection;
 import yybos.katarakt.Objects.*;
+import yybos.katarakt.Objects.Message.Chat;
+import yybos.katarakt.Objects.Message.Command;
+import yybos.katarakt.Objects.Message.Message;
+import yybos.katarakt.Objects.Message.User;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -29,7 +35,6 @@ public class MessageServer {
         ConsoleLog.info("Connection accepted: " + client.ip);
 
         int packet;
-        PacketObject packetObject;
 
         String bucket = "";
         StringBuilder rawMessage;
@@ -38,7 +43,7 @@ public class MessageServer {
             while (true) {
                 rawMessage = new StringBuilder();
 
-                // receive packetObject
+                // receive packet
                 do {
                     // rawMessage will be the parsed packetObject and the bucket will be the next packetObject. Break the loop and parse :Sex_penis:
                     if (!bucket.isEmpty()) {
@@ -72,28 +77,32 @@ public class MessageServer {
                 } while (true);
                 rawMessage = new StringBuilder(rawMessage.toString().replace("\0", ""));
 
-                // parse raw packetObject
-                packetObject = PacketObject.fromString(rawMessage.toString());
+                // get packet type
+                PacketObject.Type packetType = this.getPacketType(rawMessage.toString());
 
                 // deal with message
-                if (packetObject.getType() == PacketObject.Type.Message) {
+                if (packetType == PacketObject.Type.Message) {
                     Message message = Message.fromString(rawMessage.toString());
+                    message.setUserId(client.getId());
 
                     ConsoleLog.info(client.getUsername() + ": " + message.getMessage());
-                    dbConnection.pushMessage(message);
+
+                    // send the message with the generated id from the database
+                    client.thisClient.sendObject(dbConnection.pushMessage(message));
                 }
-                else if (packetObject.getType() == PacketObject.Type.Command) {
+                else if (packetType == PacketObject.Type.Command) {
                     Command command = Command.fromString(rawMessage.toString());
 
                     switch (command.getCommand()) {
                         case "getChatHistory": {
-                            if (command.getA() == 0)
+                            if (command.getArgs().size() == 0)
                                 continue;
 
-                            List<Message> log = dbConnection.getLog(command.getA());
+                            int chatId = command.getArgs().get("chatId").getAsInt();
+                            List<Message> log = dbConnection.getLog(chatId);
 
                             if (log == null) {
-                                client.thisClient.sendObject(Command.errorToast("This chat doesn't exist anymore"));
+                                client.thisClient.sendObject(Command.errorToast("This chat doesn't exist"));
                                 break;
                             }
 
@@ -103,18 +112,19 @@ public class MessageServer {
                             break;
                         }
                         case "getChats": {
-                            for (Chat chat : dbConnection.getChats(client.getId())) {
+                            for (Chat chat : dbConnection.getChats(client.getId()))
                                 client.thisClient.sendObject(chat);
-                            }
 
                             break;
                         }
                         case "setUsername": {
-                            if (command.getF() == null || command.getF().isBlank())
+                            if (command.getArgs().size() == 0)
                                 continue;
 
-                            dbConnection.updateUsername(client.getId(), command.getF());
-                            client.setUsername(command.getF());
+                            String newUsername = command.getArgs().get("username").getAsString();
+
+                            dbConnection.updateUsername(client.getId(), newUsername);
+                            client.setUsername(newUsername);
 
                             User newUser = new User();
                             newUser.setId(client.getId());
@@ -128,27 +138,30 @@ public class MessageServer {
                             break;
                         }
                         case "createChat": {
-                            if (command.getF() == null || command.getF().isBlank())
+                            if (command.getArgs().size() == 0)
                                 continue;
 
-                            Chat newChat = dbConnection.createChat(command.getF(), client.getId());
+                            String chat = command.getArgs().get("chat").getAsString();
+
+                            Chat newChat = dbConnection.createChat(chat, client.getId());
 
                             if (newChat == null) {
                                 client.thisClient.sendObject(Command.errorToast("Failed to create chat :("));
-                                client.thisClient.sendObject(Command.toCommand(Constants.outputCommand, "Failed to create chat"));
+                                client.thisClient.sendObject(Command.output("Failed to create chat"));
                                 break;
                             }
 
                             client.thisClient.sendObject(newChat);
-                            client.thisClient.sendObject(Command.toCommand(Constants.outputCommand, "Chat created: " + newChat));
+                            client.thisClient.sendObject(Command.output("Chat created: " + newChat));
 
                             break;
                         }
                         case "deleteChat": {
-                            if (command.getA() == 0)
+                            if (command.getArgs().size() == 0)
                                 continue;
 
-                            dbConnection.deleteChat(command.getA());
+                            int chat = command.getArgs().get("chatId").getAsInt();
+                            dbConnection.deleteChat(chat);
 
                             break;
                         }
@@ -156,11 +169,12 @@ public class MessageServer {
                         // user commands
 
                         case "cmd": {
-                            if (command.getF() == null || command.getF().isBlank())
+                            if (command.getArgs().size() == 0)
                                 continue;
 
                             // Command to execute (e.g., "dir" to list files in the current directory)
-                            String[] commandArg = command.getF().trim().split(" ");
+                            String prompt = command.getArgs().get("prompt").getAsString();
+                            String[] commandArg = prompt.split(" ");
 
                             try {
                                 Process cmd = Runtime.getRuntime().exec(concatenateArrays(new String[]{"cmd.exe", "/c"}, commandArg));
@@ -179,17 +193,29 @@ public class MessageServer {
                                     temp.append(line).append('\n');
                                 }
 
-                                this.client.thisClient.sendObject(Command.toCommand(Constants.outputCommand, temp.toString()));
+                                this.client.thisClient.sendObject(Command.output(temp.toString()));
                             } catch (IOException e) {
-                                this.client.thisClient.sendObject(Command.toCommand(Constants.outputCommand, "Internal server error"));
+                                this.client.thisClient.sendObject(Command.output("Internal server error"));
                                 e.printStackTrace();
                             }
 
                             break;
                         }
 
+                        // otaku uwu
+
+                        case "getAnimeList": {
+                            for (Anime anime : dbConnection.getAnimeList())
+                                client.thisClient.sendObject(anime);
+
+                            break;
+                        }
+                        case "getTowatch": {
+                            break;
+                        }
+
                         default: {
-                            this.client.thisClient.sendObject(Command.toCommand(Constants.outputCommand, "Command '" + command.getCommand() + "' not found"));
+                            this.client.thisClient.sendObject(Command.output("Command '" + command.getCommand() + "' not found"));
 
                             break;
                         }
@@ -220,5 +246,9 @@ public class MessageServer {
         System.arraycopy(array2, 0, resultArray, length1, length2);
 
         return resultArray;
+    }
+    private PacketObject.Type getPacketType (String json) {
+        JsonObject jsonObject = JsonParser.parseString(json).getAsJsonObject();
+        return PacketObject.Type.valueOf(jsonObject.get("type").getAsString());
     }
 }

@@ -1,42 +1,48 @@
-package yybos.katarakt.Objects;
+package yybos.katarakt.Objects.Message;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import yybos.katarakt.Objects.ObjectDateDeserializer;
+import yybos.katarakt.Objects.PacketObject;
 
 import java.sql.Date;
 
 public class User extends PacketObject {
+    private String username;
+    private String email;
+    private String password;
+
     public User () {
         super.setType(PacketObject.Type.User.getValue());
     }
 
     public String getUsername () {
-        return this.e;
+        return this.username;
     }
     public String getEmail () {
-        return this.f;
+        return this.email;
     }
     public String getPassword () {
-        return this.g;
+        return this.password;
     }
 
     public void setUsername(String username) {
-        this.e = username;
+        this.username = username;
     }
     public void setEmail (String email) {
-        this.f = email;
+        this.email = email;
     }
     public void setPassword (String password) {
-        this.g = password;
+        this.password = password;
     }
 
     public static User toUser (int id, String username, String email, String password) {
         User from = new User();
         from.id = id;
 
-        from.e = username;
-        from.f = email;
-        from.g = password;
+        from.username = username;
+        from.email = email;
+        from.password = password;
 
         return from;
     }

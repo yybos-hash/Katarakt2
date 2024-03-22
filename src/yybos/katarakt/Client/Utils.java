@@ -5,16 +5,12 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSerializer;
 import yybos.katarakt.ConsoleLog;
 import yybos.katarakt.Constants;
-import yybos.katarakt.Objects.Chat;
-import yybos.katarakt.Objects.Message;
-import yybos.katarakt.Objects.User;
+import yybos.katarakt.Objects.Media.MediaFile;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
 import java.sql.Date;
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 
 public class Utils {
@@ -57,7 +53,7 @@ public class Utils {
         SimpleDateFormat customDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
         GsonBuilder gsonBuilder = new GsonBuilder();
-        gsonBuilder.registerTypeAdapter(Date.class, (JsonSerializer<Date>) (src, typeOfSrc, context) -> context.serialize(customDateFormat.format(src)));
+        gsonBuilder.registerTypeAdapter(Timestamp.class, (JsonSerializer<Timestamp>) (src, typeOfSrc, context) -> context.serialize(customDateFormat.format(src)));
         //  Basically when gson formats a Date in the sql.Date format it changes the format, so this keeps the it as it should
 
         Gson objParser = gsonBuilder.create();
@@ -97,8 +93,33 @@ public class Utils {
     }
 
     // although the MessageServer has access to this method, it should NOT be used by it. This goes both ways with MediaServer
-    public void sendFile () {
+    public void sendFile (MediaFile file) {
+        if (file == null)
+            return;
 
+        this.sendObject(file);
+
+        // so... to separate the bytes from the json I will receive a byte from the client and then send the actual data
+        try {
+            this.in.read(new byte[1]);
+
+            // now to the actual data
+
+            File f = file.toFile();
+            FileInputStream fileInputStream = new FileInputStream(f);
+
+            int bytesRead;
+
+            // Read and write the file in chunks
+            while ((bytesRead = fileInputStream.read(Constants.buffer)) != -1) {
+                this.out.write(Constants.buffer, 0, bytesRead);
+            }
+
+            this.out.flush();
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public void close () {

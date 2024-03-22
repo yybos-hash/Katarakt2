@@ -1,4 +1,4 @@
-package yybos.katarakt.Objects;
+package yybos.katarakt.Objects.Message;
 
 /*
  *   The message will run through json
@@ -12,11 +12,19 @@ package yybos.katarakt.Objects;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import yybos.katarakt.Objects.ObjectDateDeserializer;
+import yybos.katarakt.Objects.PacketObject;
 
 import java.sql.Date;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
+import java.util.Locale;
 
 public class Message extends PacketObject {
-    private final User user = new User();
+    private String content;
+    private int chat;
+
+    private User user = new User();
 
     public Message () {
         super.setType(PacketObject.Type.Message.getValue());
@@ -26,10 +34,10 @@ public class Message extends PacketObject {
         return this.id;
     }
     public String getMessage () {
-        return this.e;
+        return this.content;
     }
     public int getChat () {
-        return this.a;
+        return this.chat;
     }
     public String getUsername () {
         return this.user.getUsername();
@@ -37,15 +45,12 @@ public class Message extends PacketObject {
     public int getUserId () {
         return this.user.getId();
     }
-    public Date getDate () {
-        return this.date;
-    }
 
     public void setMessage (String message) {
-        this.e = message;
+        this.content = message;
     }
     public void setChat (int id) {
-        this.a = id;
+        this.chat = id;
     }
     public void setUsername (String username) {
         this.user.setUsername(username);
@@ -56,27 +61,26 @@ public class Message extends PacketObject {
 
     public static Message toMessage (String message, int chat, String username, int userId) {
         Message from = new Message();
-        from.e = message;
-        from.a = chat;
+        from.content = message;
+        from.chat = chat;
         from.user.setUsername(username);
         from.user.setId(userId);
-        from.date = new Date(System.currentTimeMillis());
+        from.date = System.currentTimeMillis();
 
         return from;
     }
     public static Message toMessage (String message, String username) {
         Message from = new Message();
-        from.e = message;
-        from.a = 0;
+        from.content = message;
+        from.chat = 0;
         from.user.setUsername(username);
-        from.b = 0;
-        from.date = new Date(System.currentTimeMillis());
+        from.user.setId(0);
+        from.date = System.currentTimeMillis();
 
         return from;
     }
     public static Message fromString (String json) {
         GsonBuilder gsonBuilder = new GsonBuilder();
-        gsonBuilder.registerTypeAdapter(Date.class, new ObjectDateDeserializer());
         //  Basically when gson formats a Date in the sql.Date format it changes the format, so this keeps the it as it should
 
         Gson parser = gsonBuilder.serializeNulls().create();
@@ -88,9 +92,9 @@ public class Message extends PacketObject {
     public String toString() {
         return "{\nid: " + this.id +
                 ",\ntype: '" + this.type +
-                "',\nmessage: '" + this.e +
+                "',\nmessage: '" + this.content +
                 ",\ndate: " + this.date +
-                ",\nchat: " + this.a +
-                ",\nuser: " + this.b + "\n}\n";
+                ",\nchat: " + this.chat +
+                ",\nuser: " + this.user.getId() + "\n}\n";
     }
 }

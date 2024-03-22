@@ -4,10 +4,10 @@ import yybos.katarakt.Client.Client;
 import yybos.katarakt.ConsoleLog;
 import yybos.katarakt.Constants;
 import yybos.katarakt.Database.DBConnection;
-import yybos.katarakt.Objects.Command;
+import yybos.katarakt.Objects.Message.Command;
 import yybos.katarakt.Objects.Login;
-import yybos.katarakt.Objects.Message;
-import yybos.katarakt.Objects.User;
+import yybos.katarakt.Objects.Message.Message;
+import yybos.katarakt.Objects.Message.User;
 
 import java.io.IOException;
 import java.net.InetAddress;

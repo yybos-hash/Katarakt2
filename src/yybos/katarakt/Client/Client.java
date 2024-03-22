@@ -1,13 +1,8 @@
 package yybos.katarakt.Client;
 
-import yybos.katarakt.ConsoleLog;
-import yybos.katarakt.Constants;
-import yybos.katarakt.Objects.Message;
-import yybos.katarakt.Objects.User;
+import yybos.katarakt.Objects.Message.User;
 
-import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.net.SocketAddress;
 
 public class Client extends User {
     public final Socket socket;

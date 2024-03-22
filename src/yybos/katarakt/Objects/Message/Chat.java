@@ -1,39 +1,45 @@
-package yybos.katarakt.Objects;
+package yybos.katarakt.Objects.Message;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import yybos.katarakt.Objects.ObjectDateDeserializer;
+import yybos.katarakt.Objects.PacketObject;
 
 import java.sql.Date;
+import java.sql.Timestamp;
 
 public class Chat extends PacketObject {
+    private String name;
+    private int userId;
+
     public Chat () {
         super.setType(PacketObject.Type.Chat.getValue());
     }
 
     public void setName (String name) {
-        this.e = name;
+        this.name = name;
     }
     public void setUser (int id) {
-        this.a = id;
+        this.userId = id;
     }
 
     public String getName () {
-        return this.e;
+        return this.name;
     }
 
     public static Chat toChat (int id, int user, String name) {
         Chat chat = new Chat();
         chat.id = id;
-        chat.a = user;
-        chat.e = name;
+        chat.userId = user;
+        chat.name = name;
 
         return chat;
     }
-    public static Chat toChat (int id, int user, Date date, String name) {
+    public static Chat toChat (int id, int user, long date, String name) {
         Chat chat = new Chat();
         chat.id = id;
-        chat.a = user;
-        chat.e = name;
+        chat.userId = user;
+        chat.name = name;
         chat.date = date;
 
         return chat;
@@ -50,7 +56,7 @@ public class Chat extends PacketObject {
 
     @Override
     public String toString () {
-        return "id: " + this.id + "\n" + "name: " + this.e + "\n" + "date: " + this.date;
+        return "id: " + this.id + "\n" + "name: " + this.name + "\n" + "date: " + this.date;
     }
 }
 

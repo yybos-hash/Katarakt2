@@ -1,33 +1,45 @@
 package yybos.katarakt.Database;
 
 import yybos.katarakt.ConsoleLog;
-import yybos.katarakt.Objects.Chat;
-import yybos.katarakt.Objects.Message;
-import yybos.katarakt.Objects.User;
+import yybos.katarakt.Objects.Anime;
+import yybos.katarakt.Objects.Message.Chat;
+import yybos.katarakt.Objects.Message.Message;
+import yybos.katarakt.Objects.Message.User;
 
 import java.sql.*;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DBConnection {
+import static yybos.katarakt.Objects.PacketObject.Type.Chat;
 
+public class DBConnection {
     private Connection connection;
 
-    public void pushMessage (Message message) {
+    public Message pushMessage (Message message) {
         this.connect();
 
         try {
-            String sql = "INSERT INTO messages (message, fk_type, fk_chat, fk_user) VALUES (?, ?, ?, ?)";
+            String sql = "INSERT INTO messages (message, dat, fk_type, fk_chat, fk_user) VALUES (?, ?, ?, ?, ?)";
 
             // avoid sql injection
-            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+            PreparedStatement preparedStatement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             preparedStatement.setString(1, message.getMessage());
-            preparedStatement.setInt(2, message.getType().ordinal());
-            preparedStatement.setInt(3, message.getChat());
-            preparedStatement.setInt(4, message.getUserId());
+            preparedStatement.setTimestamp(2, new Timestamp(message.getDate()));
+            preparedStatement.setInt(3, message.getType().ordinal());
+            preparedStatement.setInt(4, message.getChat());
+            preparedStatement.setInt(5, message.getUserId());
 
             // Execute the INSERT
             preparedStatement.executeUpdate();
+
+            // Retrieve the generated keys (auto-incremented IDs)
+            ResultSet generatedKeys = preparedStatement.getGeneratedKeys();
+            generatedKeys.next();
+
+            int newMessageId = generatedKeys.getInt(1);
+            message.setId(newMessageId);
 
             this.close();
         } catch (SQLException e) {
@@ -36,6 +48,7 @@ public class DBConnection {
         }
 
         this.close();
+        return message;
     }
     public List<Message> getLog (int chat) {
         this.connect(); // connect to database
@@ -57,7 +70,7 @@ public class DBConnection {
                 int id = resultSet.getInt("id");
                 int type = resultSet.getInt("fk_type");
                 String text = resultSet.getString("message");
-                Date date = resultSet.getDate("dat");
+                Timestamp date = resultSet.getTimestamp("dat");
                 String user = resultSet.getString("nm");
                 int userId = resultSet.getInt("fk_user");
 
@@ -65,7 +78,7 @@ public class DBConnection {
                 message.setId(id);
                 message.setType(type);
                 message.setMessage(text);
-                message.setDate(date);
+                message.setDate(date.getTime());
                 message.setChat(chat);
                 message.setUsername(user);
                 message.setUserId(userId);
@@ -199,7 +212,7 @@ public class DBConnection {
                 chat.setId(resultSet.getInt("id"));
                 chat.setName(resultSet.getString("nm"));
                 chat.setUser(user);
-                chat.setDate(resultSet.getDate("created_at"));
+                chat.setDate(resultSet.getTimestamp("created_at").getTime());
 
                 chats.add(chat);
             }
@@ -245,7 +258,7 @@ public class DBConnection {
             chat.setId(resultSet.getInt("id"));
             chat.setName(name);
             chat.setUser(user);
-            chat.setDate(resultSet.getDate("created_at"));
+            chat.setDate(resultSet.getTimestamp("created_at").getTime());
 
             return chat;
         }
@@ -296,6 +309,69 @@ public class DBConnection {
         }
 
         this.close();
+    }
+
+    // otaku
+
+    public List<Anime> getAnimeList () {
+        List<Anime> animes = new ArrayList<>();
+
+        this.connect();
+        Anime anime;
+
+        try {
+            String sql;
+
+            sql = "SELECT\n" +
+                    "    animes.id AS anime_id,\n" +
+                    "    animes.anime_name AS anime_name,\n" +
+                    "    animes.anime_type AS anime_type,\n" +
+                    "    animes.isdone AS anime_isdone,\n" +
+                    "    anime_entry.id AS entry_id,\n" +
+                    "    anime_entry.link AS link,\n" +
+                    "    anime_entry.dt AS last_entry_timestamp,\n" +
+                    "    anime_entry.episode AS entry_episode,\n" +
+                    "    anime_entry.stoped_at AS entry_stoped_at\n" +
+                    "FROM\n" +
+                    "    animes\n" +
+                    "JOIN\n" +
+                    "    anime_entry ON animes.id = anime_entry.anime_id\n" +
+                    "WHERE\n" +
+                    "    (anime_entry.anime_id, anime_entry.dt, anime_entry.id) = \n" +
+                    "    (SELECT anime_id, MAX(dt), MAX(id)\n" +
+                    "     FROM anime_entry\n" +
+                    "     WHERE anime_id = animes.id\n" +
+                    "     GROUP BY anime_id);\n";
+
+            // prepare the sql and shit
+            PreparedStatement preparedStatement = this.connection.prepareStatement(sql);
+
+            ResultSet resultSet = preparedStatement.executeQuery();
+            while (resultSet.next()) {
+                anime = new Anime();
+                anime.setId(resultSet.getInt("anime_id"));
+                anime.setLink(resultSet.getString("link"));
+                anime.setName(resultSet.getString("anime_name"));
+                anime.setLastEntry(resultSet.getTimestamp("last_entry_timestamp").getTime());
+                anime.setEpisode(resultSet.getInt("entry_episode"));
+                anime.setStopedAt(resultSet.getString("entry_stoped_at"));
+                anime.setIsDone(resultSet.getBoolean("anime_isdone"));
+
+                String typeStr = resultSet.getString("anime_type");
+                if (typeStr.equalsIgnoreCase("anime"))
+                    anime.setAnimeType(Anime.AnimeType.Anime);
+                else
+                    anime.setAnimeType(Anime.AnimeType.Hentai);
+
+                animes.add(anime);
+            }
+        }
+        catch (Exception e) {
+            ConsoleLog.error(e.getMessage());
+        }
+
+        this.close();
+        return animes;
     }
 
     private void connect () {
