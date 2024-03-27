@@ -13,6 +13,7 @@ import yybos.katarakt.Objects.Media.MediaFile;
 import yybos.katarakt.Objects.Message.Command;
 
 import java.io.*;
+import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
@@ -28,9 +29,6 @@ public class MediaServer {
         server.start();
     }
 
-    /*
-    *   NOTE: MediaServer will not send previews, it will only send the files data
-    */
     private void handleClient (Client client) {
         DBConnection dbConnection = new DBConnection();
 
@@ -38,15 +36,11 @@ public class MediaServer {
         StringBuilder rawMessage;
 
         try {
-            Thread.sleep(5000);
+            Thread.sleep(3000);
         }
         catch (Exception e) {
             e.printStackTrace();
         }
-
-//        MediaFile m = MediaFile.toMediaFile("C:\\Users\\plusm\\Downloads\\H.mp3", DOWNLOAD);
-//        m.getUser().setUsername("Server");
-//        client.thisClient.sendFile(m);
 
         try {
             while (true) {
@@ -93,7 +87,7 @@ public class MediaServer {
                 if (packetType == PacketObject.Type.File) {
                     MediaFile media = MediaFile.fromString(rawMessage.toString());
 
-                    if (media.getFileType() == MediaFile.MediaFileType.UPLOAD) {
+                    if (media.getProcessType() == MediaFile.MediaProcessType.UPLOAD) {
                         File file = media.toFile();
                         if (!file.exists())
                             file.createNewFile();
@@ -116,35 +110,15 @@ public class MediaServer {
 
                         outputStream.close();
                     }
-                    else {
-                        try {
-                            File file = media.toFile();
-                            if (!file.exists())
-                                continue;
-
-                            media.setSize(file.length());
-                            client.thisClient.sendObject(media);
-
-                            FileInputStream inputStream = new FileInputStream(file);
-
-                            do {
-                                client.thisClient.out.write(inputStream.read(Constants.buffer));
-                                client.thisClient.out.flush();
-
-                            } while (inputStream.available() != 0);
-
-                            System.out.println("done sending");
-                            inputStream.close();
-                        }
-                        catch (Exception e) {
-                            e.printStackTrace();
-                        }
+                    else if (media.getProcessType() == MediaFile.MediaProcessType.DOWNLOAD) {
+                        client.thisClient.sendFile(media);
                     }
                 }
                 else if (packetType == PacketObject.Type.Command) {
                     Command command = Command.fromString(rawMessage.toString());
 
                     switch (command.getCommand()) {
+                        // this was supposed to mean Subdirectories, do not mistake this for twitch streamers
                         case "getSubs": {
                             if (command.getArgs().size() == 0)
                                 continue;
@@ -159,7 +133,7 @@ public class MediaServer {
                                 Files.list(Paths.get(path))
                                     .forEach(filePath -> {
                                         DirectoryObject obj = new DirectoryObject();
-                                        obj.path = path;
+                                        obj.path = filePath.toAbsolutePath().toString().replace("\\", "/");
 
                                         if (Files.isDirectory(filePath))
                                             obj.isFolder = true;
@@ -170,20 +144,22 @@ public class MediaServer {
                                     });
 
                                 client.thisClient.sendObject(dir);
-                            } catch (IOException e) {
-                                e.printStackTrace();
+                            }
+                            catch (AccessDeniedException e) {
+                                ConsoleLog.warning("On 'getSubs' Access denied on '" + e.getMessage() + "'");
+                            }
+                            catch (IOException e) {
+                                ConsoleLog.warning("On 'getSubs' IOException: " + e.getMessage());
                             }
 
                             break;
                         }
                         case "getChats": {
-
                             break;
                         }
 
                         default: {
                             this.client.thisClient.sendObject(Command.output("Command '" + command.getCommand() + "' not found"));
-
                             break;
                         }
                     }
@@ -195,6 +171,7 @@ public class MediaServer {
 
             ConsoleLog.info("Client " + client.ip + " disconnected");
             ConsoleLog.exception(e.getMessage());
+            e.printStackTrace();
         }
     }
 

@@ -12,7 +12,11 @@ import java.util.List;
 
 public class Directory extends PacketObject {
     public String path;
-    public List<DirectoryObject> objects = new ArrayList<>();
+    public final List<DirectoryObject> objects = new ArrayList<>();
+
+    public Directory () {
+        this.type = Type.Directory.getValue();
+    }
 
     public static Directory fromString (String json) {
         GsonBuilder gsonBuilder = new GsonBuilder();

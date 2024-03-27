@@ -27,7 +27,7 @@ public class DBConnection {
             PreparedStatement preparedStatement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             preparedStatement.setString(1, message.getMessage());
             preparedStatement.setTimestamp(2, new Timestamp(message.getDate()));
-            preparedStatement.setInt(3, message.getType().ordinal());
+            preparedStatement.setInt(3, message.getType());
             preparedStatement.setInt(4, message.getChat());
             preparedStatement.setInt(5, message.getUserId());
 

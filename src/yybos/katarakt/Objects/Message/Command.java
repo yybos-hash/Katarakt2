@@ -33,7 +33,7 @@ public class Command extends PacketObject {
 
     public static Command toCommand (String command, JsonObject args) {
         Command from = new Command();
-        from.type = Type.Command;
+        from.type = Type.Command.getValue();
         from.command = command;
         from.args = args;
 

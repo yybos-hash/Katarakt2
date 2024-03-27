@@ -249,6 +249,6 @@ public class MessageServer {
     }
     private PacketObject.Type getPacketType (String json) {
         JsonObject jsonObject = JsonParser.parseString(json).getAsJsonObject();
-        return PacketObject.Type.valueOf(jsonObject.get("type").getAsString());
+        return PacketObject.Type.getEnumByValue(jsonObject.get("type").getAsInt());
     }
 }
